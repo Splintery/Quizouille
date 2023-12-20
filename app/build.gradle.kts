@@ -68,16 +68,20 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     val room_version = "2.6.0"
+    //noinspection GradleDependency
     implementation("androidx.room:room-runtime:$room_version")
+    //noinspection GradleDependency
     implementation("androidx.room:room-ktx:$room_version")
+    //noinspection GradleDependency
     annotationProcessor("androidx.room:room-compiler:$room_version")
+    //noinspection GradleDependency
     ksp("androidx.room:room-compiler:$room_version")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     val nav_version = "2.7.5"
-    implementation("androidx.naviga4on:naviga4on-compose:$nav_version")
+    //noinspection GradleDependency
+    implementation("androidx.navigation:navigation-compose:$nav_version")
     implementation("androidx.compose.material:material:1.5.4")
     val lifecycle_version ="2.6.2"
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-run4me-ktx:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
     implementation("androidx.core:core-ktx:1.12.0")
 }
