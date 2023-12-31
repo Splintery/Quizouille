@@ -20,7 +20,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -79,32 +83,29 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
         TitleWithContentRow(title = "Notifications", fontSize = 16) {
             Switch(
                 checked = notificationsMode,
-                onCheckedChange = { settingsViewModel.setNotifications(notificationsMode) })
+                onCheckedChange = { settingsViewModel.setNotifications(it) })
+        }
+        if (notificationsMode) {
+            // TODO snackbar pour dire que c'est entre 1 et 24
+            TitleWithContentRow(title = "Fréquence des notifications", fontSize = 16) {
+                SettingsTextField(
+                    value = notificationsFrequency.toString(),
+                    label = "heure",
+                    onDone = { settingsViewModel.setNotificationsFrequency(it.toInt()) })
+            }
         }
         TitleWithContentRow(title = "Temps de réponse aux questions", fontSize = 16) {
             SettingsTextField(
                 value = questionDelay.toString(),
                 label = "secondes",
-                onDone = { newDelay ->
-                    settingsViewModel.setQuestionDelay(newDelay.toInt())
-                }
+                onDone = { settingsViewModel.setQuestionDelay(it.toInt()) }
             )
-        }
-        TitleWithContentRow(title = "Fréquence des notifications", fontSize = 16) {
-            SettingsTextField(
-                value = notificationsFrequency.toString(),
-                label = "jour",
-                onDone = { newFreq ->
-                    settingsViewModel.setNotificationsFrequency(newFreq.toInt())
-                })
         }
         TitleWithContentRow(title = "Taille de la police", fontSize = 16) {
             SettingsTextField(
                 value = policeSize.toString(),
                 label = "",
-                onDone = { newSize ->
-                    settingsViewModel.setPoliceSize(newSize.toInt())
-                })
+                onDone = { settingsViewModel.setPoliceSize(it.toInt()) })
         }
     }
 }

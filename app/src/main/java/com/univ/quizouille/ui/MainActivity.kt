@@ -1,48 +1,53 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 
 package com.univ.quizouille.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.SnackbarHostState
+import androidx.compose.material.TextField
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.univ.quizouille.model.QuestionSet
+import com.univ.quizouille.viewmodel.AppViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.forEach
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,8 +59,58 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Test1() {
-    Text(text = "page 1")
+fun showQuestionsSet(set: List<QuestionSet>) {
+    LazyColumn {
+        items(set) {
+            Row {
+                Text(text = it.name)
+                Text(text = it.setId.toString())
+            }
+        }
+    }
+}
+
+@SuppressLint("RememberReturnType", "UnusedMaterial3ScaffoldPaddingParameter")
+@Composable
+fun Test1(appViewModel: AppViewModel) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val questionsSet by appViewModel.questionSetsFlow.collectAsState(listOf())
+    var setId by remember { mutableIntStateOf(0) }
+    var question by remember { mutableStateOf("") }
+    var answer by remember { mutableStateOf("") }
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState)} ) {
+        Column {
+            Row {
+                OutlinedTextField(value = setId.toString(), onValueChange = { setId = it.toInt()} , label = { Text(text = "setId")})
+            }
+            Row {
+                OutlinedTextField(value = question, onValueChange = { question = it } , label = { Text(text = "question")})
+            }
+            Row {
+                OutlinedTextField(value = answer, onValueChange = { answer = it } , label = { Text(text = "answer")})
+            }
+            Row {
+                Button(onClick = {
+                    appViewModel.insertQuestion(1, "oui", "non")
+                }) {
+                    Text(text = "insérer", Modifier.padding(1.dp))
+                }
+            }
+            Row {
+                showQuestionsSet(questionsSet)
+            }
+        }
+
+    }
+    
+
+    LaunchedEffect(appViewModel.errorMessage) {
+        if (appViewModel.errorMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(appViewModel.errorMessage)
+            appViewModel.errorMessage = ""  // Clear the error message after showing it
+        }
+    }
 }
 
 @Composable
@@ -63,88 +118,14 @@ fun Test2() {
     Text(text = "page 2")
 }
 
-/*
 @Composable
-fun Settings() {
-    // TODO Ajouter VAR globales dans viewmodel
-    var notificationsChecked by remember { mutableStateOf(true) }
-    var questionDelay by remember { mutableStateOf("10")}
-    var policeSize by remember { mutableStateOf("10")}
-    Log.d("aled", questionDelay)
-
-    Column {
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            , horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Paramètres", fontSize = 20.sp, modifier = Modifier.weight(1f))
-        }
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            , horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Notifications", fontSize = 16.sp, modifier = Modifier.weight(1f))
-            Switch(checked = notificationsChecked, onCheckedChange = { notificationsChecked = it } )
-        }
-        Row(modifier = Modifier.padding(16.dp)
-            , horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Fréquence des notifications (jour)", fontSize = 16.sp, modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp))
-            OutlinedTextField(value = questionDelay,
-                onValueChange = {
-                    if (it.all { char -> char.isDigit() }) {
-                        questionDelay = it
-                    }}
-                , keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
-                , modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 10.dp)
-            )
-        }
-        Row(modifier = Modifier.padding(16.dp)
-            , horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Temps de réponse aux questions (secondes)", fontSize = 16.sp, modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp))
-            OutlinedTextField(value = questionDelay,
-                onValueChange = {
-                if (it.all { char -> char.isDigit() }) {
-                    questionDelay = it
-                }}
-                , keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
-                , modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 10.dp)
-            )
-        }
-        Row(modifier = Modifier.padding(16.dp)
-            , horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Taille de la police", fontSize = 16.sp, modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp))
-            OutlinedTextField(value = policeSize,
-                onValueChange = {
-                    if (it.all { char -> char.isDigit() }) {
-                        policeSize = it
-                    }}
-                , keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
-                , modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 10.dp)
-            )
-        }
-    }
-}
- */
-
-@Composable
-fun Main(model: SettingsViewModel = viewModel()) {
+fun Main(model: SettingsViewModel = viewModel(), appViewModel: AppViewModel = viewModel()) {
     val navController = rememberNavController()
+    appViewModel.insertSampleData()
 
     Scaffold(bottomBar = { BottomBar(navController = navController) }) { paddingValues ->
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
-            composable("game") { Test1() }
+            composable("game") { Test1(appViewModel) }
             composable("edit") { Test2() }
             composable("settings") { SettingsScreen(settingsViewModel = model) }
         }
