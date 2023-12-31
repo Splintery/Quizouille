@@ -21,5 +21,6 @@ data class Question(
     val questionSetId: Int,
     val content: String,
     val answer: String,
-    val status: Int = 1
+    val status: Int = 1,
+    val lastShownDate: String = ""
 )

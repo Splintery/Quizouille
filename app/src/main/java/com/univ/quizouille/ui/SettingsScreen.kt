@@ -2,10 +2,7 @@
 
 package com.univ.quizouille.ui
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,35 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.text.isDigitsOnly
+import com.univ.quizouille.ui.components.TitleWithContentRow
 import com.univ.quizouille.viewmodel.SettingsViewModel
-
-@Composable
-fun TitleWithContentRow(title: String, fontSize: Int, content: @Composable (() -> Unit)? = null) {
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = title,
-            fontSize = fontSize.sp,
-            modifier = Modifier.weight(1f)
-        )
-        content?.invoke()
-    }
-}
 
 @Composable
 fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
@@ -74,34 +49,36 @@ fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
 @Composable
 fun SettingsScreen(settingsViewModel: SettingsViewModel) {
     val questionDelay by settingsViewModel.questionDelayFlow.collectAsState(initial = 10)
-    val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 10)
+    val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
+    val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val notificationsMode by settingsViewModel.notificationsFlow.collectAsState(initial = true)
-    val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 1)
+    val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 24)
 
     Column {
-        TitleWithContentRow(title = "Paramètres", fontSize = 20)
-        TitleWithContentRow(title = "Notifications", fontSize = 16) {
+        TitleWithContentRow(title = "Paramètres", fontSize = policeTitleSize)
+        TitleWithContentRow(title = "Notifications", fontSize = policeSize) {
             Switch(
                 checked = notificationsMode,
                 onCheckedChange = { settingsViewModel.setNotifications(it) })
         }
         if (notificationsMode) {
             // TODO snackbar pour dire que c'est entre 1 et 24
-            TitleWithContentRow(title = "Fréquence des notifications", fontSize = 16) {
+            TitleWithContentRow(title = "Fréquence des notifications", fontSize = policeSize) {
                 SettingsTextField(
                     value = notificationsFrequency.toString(),
                     label = "heure",
                     onDone = { settingsViewModel.setNotificationsFrequency(it.toInt()) })
             }
         }
-        TitleWithContentRow(title = "Temps de réponse aux questions", fontSize = 16) {
+        TitleWithContentRow(title = "Temps de réponse aux questions", fontSize = policeSize) {
             SettingsTextField(
                 value = questionDelay.toString(),
                 label = "secondes",
                 onDone = { settingsViewModel.setQuestionDelay(it.toInt()) }
             )
         }
-        TitleWithContentRow(title = "Taille de la police", fontSize = 16) {
+        TitleWithContentRow(title = "Taille de la police", fontSize = policeSize) {
+            // TODO mettre un minimun et un maximum
             SettingsTextField(
                 value = policeSize.toString(),
                 label = "",

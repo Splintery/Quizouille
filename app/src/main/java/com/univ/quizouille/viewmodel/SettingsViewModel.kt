@@ -24,7 +24,11 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
     }
 
     val policeSizeFlow = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.POLICE_SIZE] ?: 10
+        preferences[PreferencesKeys.POLICE_SIZE] ?: 16
+    }
+
+    val policeTitleSizeFlow = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.POLICE_TITLE_SIZE] ?: 20
     }
 
     val notificationsFlow = dataStore.data.map { preferences ->
@@ -48,6 +52,7 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[PreferencesKeys.POLICE_SIZE] = size
+                preferences[PreferencesKeys.POLICE_TITLE_SIZE] = (size * 1.25).toInt()
             }
         }
     }
@@ -71,6 +76,7 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
     private object PreferencesKeys {
         val QUESTION_DELAY = intPreferencesKey("question_delay")
         val POLICE_SIZE = intPreferencesKey("police_size")
+        val POLICE_TITLE_SIZE = intPreferencesKey("police_title_size")
         val NOTIFICATIONS = booleanPreferencesKey("notifications")
         val NOTIFICATIONS_FREQUENCY = intPreferencesKey("notifications_freq")
     }
