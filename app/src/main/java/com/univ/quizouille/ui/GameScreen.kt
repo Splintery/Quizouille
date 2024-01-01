@@ -22,19 +22,41 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.univ.quizouille.model.Question
 import com.univ.quizouille.ui.components.TitleWithContentRow
 import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
+import kotlinx.coroutines.delay
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun handleAnswerValidation(answer: String, question: Question, gameViewModel: GameViewModel) {
+    if (answer.equals(question.answer, ignoreCase = true))
+        gameViewModel.successQuestion(question)
+    else
+        gameViewModel.failQuestion(question)
+}
+
+@Composable
+fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit) {
+    Button(
+        onClick = onClickAction,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(buttonText, fontSize = fontSize.sp)
+    }
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -46,19 +68,40 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
     val question by gameViewModel.questionFlow.collectAsState(initial = null)
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
+    val timerFlow by settingsViewModel.questionDelayFlow.collectAsState(initial = 15)
 
     var answer by remember { mutableStateOf("") }
     var showNextButton by remember { mutableStateOf(false) }
     var showNextQuestion by remember { mutableStateOf(false) }
+    var timeLeft by remember { mutableIntStateOf(timerFlow) }
+
+    LaunchedEffect(key1 = questionId, key2 = showNextButton) {
+        timeLeft = timerFlow // Reset timer for each new question
+        while (timeLeft > 0 && !showNextButton) {
+            delay(1000)
+            timeLeft -= 1
+        }
+
+    }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        if (!showNextButton) {
+            Text(
+                text = timeLeft.toString(),
+                fontSize = policeTitleSize.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
         TitleWithContentRow(title = "Question", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
         question?.let { question ->
+            if (timeLeft == 0) {
+                gameViewModel.failQuestion(question)
+                showNextButton = true
+            }
             ECard(text = question.content, fontSize = policeSize)
             OutlinedTextField(
                 value = answer,
@@ -66,34 +109,22 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
                 label = { Text("Réponse") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 8.dp),
+                enabled = !showNextButton
             )
             if (!showNextButton) {
-                Button(
-                    onClick = {
-                        if (answer.equals(question.answer, ignoreCase = true)) {
-                            gameViewModel.incrementQuestionStatus(question)
-                        }
-                        else {
-                            gameViewModel.resetQuestionStatus(question)
-                        }
-                        gameViewModel.updateQuestionSeenDate(question)
-                        showNextButton = true
-                        // navController.popBackStack()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Valider", fontSize = policeSize.sp)
+                QuestionButton(buttonText = "Valider", fontSize = policeSize) {
+                    handleAnswerValidation(answer, question, gameViewModel)
+                    showNextButton = true
+                }
+                QuestionButton(buttonText = "Afficher réponse", fontSize = policeSize) {
+                    answer = question.answer
+                    showNextButton = true
                 }
             }
             else {
-                Button(
-                    onClick = {
-                        showNextQuestion = true
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Question suivante", fontSize = policeSize.sp)
+                QuestionButton(buttonText = "Question suivante", fontSize = policeSize) {
+                    showNextQuestion = true
                 }
             }
         }
@@ -101,7 +132,10 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
 
     LaunchedEffect(showNextQuestion) {
         question?.let { currentQuestion ->
-            handleNextQuestionNavigation(setId = currentQuestion.questionSetId, gameViewModel = gameViewModel, navController = navController)
+            handleNextQuestionNavigation(
+                setId = currentQuestion.questionSetId,
+                gameViewModel = gameViewModel,
+                navController = navController)
         }
     }
 }

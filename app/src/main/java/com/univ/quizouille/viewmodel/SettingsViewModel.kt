@@ -20,7 +20,7 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
     private val dataStore: DataStore<Preferences> = application.applicationContext.dataStore;
 
     val questionDelayFlow = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.QUESTION_DELAY] ?: 10
+        preferences[PreferencesKeys.QUESTION_DELAY] ?: 15
     }
 
     val policeSizeFlow = dataStore.data.map { preferences ->

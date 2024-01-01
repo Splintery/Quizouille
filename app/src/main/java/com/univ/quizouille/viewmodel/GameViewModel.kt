@@ -100,24 +100,28 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
-    fun incrementQuestionStatus(question: Question) {
-        viewModelScope.launch {
-            question.status += 1
-            dao.updateQuestion(question)
-        }
-    }
-
     @RequiresApi(Build.VERSION_CODES.O)
-    fun updateQuestionSeenDate(question: Question) {
+    fun setLastSeenDateQuestion(question: Question) {
         viewModelScope.launch {
             question.lastShownDate = LocalDate.now().toString()
             dao.updateQuestion(question)
         }
     }
 
-    fun resetQuestionStatus(question: Question) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun successQuestion(question: Question) {
+        viewModelScope.launch {
+            question.status += 1
+            question.lastShownDate = LocalDate.now().toString()
+            dao.updateQuestion(question)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun failQuestion(question: Question) {
         viewModelScope.launch {
             question.status = 1
+            question.lastShownDate = LocalDate.now().toString()
             dao.updateQuestion(question)
         }
     }
