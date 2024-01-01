@@ -24,6 +24,7 @@ import java.lang.Exception
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.random.Random
 
 class GameViewModel(private val application: Application) : AndroidViewModel(application) {
     private val dao = (application as AppApplication).database.appDao()
@@ -72,6 +73,16 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getRandomQuestionFromSet(setId: Int): Flow<Question?> {
+        return getFilteredQuestionsForSet(setId).map { questions ->
+            if (questions.isNotEmpty())
+                questions[Random.nextInt(questions.size)]
+            else
+                null
+        }
+    }
+
     fun fetchQuestionById(questionId: Int) {
         questionFlow = dao.getQuestionById(questionId = questionId)
     }
@@ -114,7 +125,7 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
     @RequiresApi(Build.VERSION_CODES.O)
     fun insertSampleData() = viewModelScope.launch {
         try {
-            val currentDate = LocalDate.now().toString()
+            val currentDate = LocalDate.of(2023,12,28).toString()
             val set1 = QuestionSet(name = "Math Formulas")
             val set2 = QuestionSet(name = "French Vocabulary")
 

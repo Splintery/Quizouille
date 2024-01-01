@@ -8,7 +8,6 @@ package com.univ.quizouille.ui
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -45,6 +44,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.univ.quizouille.ui.theme.EditScreen
+import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 
@@ -58,85 +59,37 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "RememberReturnType")
-@Composable
-fun Test2(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    var setId by remember { mutableIntStateOf(0) }
-    var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("") }
-
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState)} ) {
-        Column {
-            Row {
-                OutlinedTextField(
-                    value = setId.toString(),
-                    onValueChange = { setId = it.toInt() },
-                    label = { Text(text = "setId") })
-            }
-            Row {
-                OutlinedTextField(
-                    value = question,
-                    onValueChange = { question = it },
-                    label = { Text(text = "question") })
-            }
-            Row {
-                OutlinedTextField(
-                    value = answer,
-                    onValueChange = { answer = it },
-                    label = { Text(text = "answer") })
-            }
-            Row {
-                Button(onClick = {
-                    gameViewModel.insertQuestion(1, "oui", "non")
-                }) {
-                    Text(text = "insérer", Modifier.padding(1.dp))
-                }
-            }
-        }
-    }
-
-    // envoie des snackbars quand une entrée dans la BD n'a pas marché
-    LaunchedEffect(gameViewModel.errorMessage) {
-        if (gameViewModel.errorMessage.isNotEmpty()) {
-            snackbarHostState.showSnackbar(gameViewModel.errorMessage)
-            gameViewModel.errorMessage = ""
-        }
-    }
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel()) {
     val navController = rememberNavController()
     gameViewModel.insertSampleData()
 
-    Log.d("ALLO?", "ALLO ?")
     Scaffold(bottomBar = {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         if (currentRoute != "question/{questionId}")
             BottomBar(navController = navController) }) { paddingValues ->
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
-            composable("game") { GameScreen(gameViewModel, settingsViewModel, navController) }
-            composable("edit") { Test2(gameViewModel, settingsViewModel) }
-            composable("settings") { SettingsScreen(settingsViewModel) }
+            composable("game") {
+                GameScreen(gameViewModel, settingsViewModel, navController)
+            }
+            composable("edit") {
+                EditScreen(gameViewModel, settingsViewModel)
+            }
+            composable("settings") {
+                SettingsScreen(settingsViewModel)
+            }
             composable("question/{questionId}") {navBackStackEntry ->
                 val questionId = navBackStackEntry.arguments?.getString("questionId") ?: "0"
                 QuestionScreen(questionId = questionId.toInt(), gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
+            }
+            composable("gameEnded") {
+                GameEnded(settingsViewModel = settingsViewModel, navController = navController)
             }
         }
     }
 }
 
-fun bottomBarClick(currentRoute: String?, route: String, navController: NavController) {
-    if (currentRoute != route) {
-        navController.navigate(route) {
-            popUpTo(navController.graph.startDestinationId)
-            launchSingleTop = true
-        }
-    }
-}
 
 @Composable
 fun BottomBar(navController: NavHostController) = BottomNavigation {
@@ -149,21 +102,36 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
     BottomNavigationItem(
         selected = currentRoute == gameRoute,
         onClick = {
-            bottomBarClick(currentRoute = currentRoute, route = gameRoute, navController = navController)
+            if (currentRoute != gameRoute) {
+                navigateToRoute(
+                    route = gameRoute,
+                    navController = navController
+                )
+            }
         },
         icon = { Icon(Icons.Outlined.PlayArrow, contentDescription = "Play menu")}
     )
     BottomNavigationItem(
         selected = currentRoute == editRoute,
         onClick = {
-            bottomBarClick(currentRoute = currentRoute, route = editRoute, navController = navController)
+            if (currentRoute != editRoute) {
+                navigateToRoute(
+                    route = editRoute,
+                    navController = navController
+                )
+            }
         },
         icon = { Icon(Icons.Outlined.Edit, contentDescription = "Edit menu")}
     )
     BottomNavigationItem(
         selected = currentRoute == "settings",
         onClick = {
-            bottomBarClick(currentRoute = currentRoute, route = settingsRoute, navController = navController)
+            if (currentRoute != settingsRoute) {
+                navigateToRoute(
+                    route = settingsRoute,
+                    navController = navController
+                )
+            }
         },
         icon = { Icon(Icons.Outlined.Settings, contentDescription = "Settings menu")}
     )

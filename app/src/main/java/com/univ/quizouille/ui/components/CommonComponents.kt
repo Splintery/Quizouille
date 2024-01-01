@@ -14,11 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun TitleWithContentRow(title: String, fontSize: Int, content: @Composable (() -> Unit)? = null) {
+fun TitleWithContentRow(title: String, fontSize: Int, fontWeight: FontWeight = FontWeight.Normal,content: @Composable (() -> Unit)? = null) {
     Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
-        Text(text = title, fontSize = fontSize.sp, fontWeight = FontWeight.Bold)
+        Text(text = title, fontSize = fontSize.sp, fontWeight = fontWeight)
         content?.invoke()
     }
 }

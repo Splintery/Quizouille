@@ -3,21 +3,15 @@
 package com.univ.quizouille.ui
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -32,12 +26,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.univ.quizouille.model.Question
 import com.univ.quizouille.ui.components.TitleWithContentRow
+import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 
@@ -53,12 +48,16 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
 
     var answer by remember { mutableStateOf("") }
+    var showNextButton by remember { mutableStateOf(false) }
+    var showNextQuestion by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        TitleWithContentRow(title = "Question", fontSize = policeTitleSize)
+        TitleWithContentRow(title = "Question", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
         question?.let { question ->
             ECard(text = question.content, fontSize = policeSize)
             OutlinedTextField(
@@ -69,22 +68,54 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             )
-            Button(
-                onClick = {
-                    if (answer.equals(question.answer, ignoreCase = true)) {
-                        gameViewModel.incrementQuestionStatus(question)
-                    }
-                    else {
-                        gameViewModel.resetQuestionStatus(question)
-                    }
-                    gameViewModel.updateQuestionSeenDate(question)
-                    // navController.popBackStack()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Valider", fontSize = policeSize.sp)
+            if (!showNextButton) {
+                Button(
+                    onClick = {
+                        if (answer.equals(question.answer, ignoreCase = true)) {
+                            gameViewModel.incrementQuestionStatus(question)
+                        }
+                        else {
+                            gameViewModel.resetQuestionStatus(question)
+                        }
+                        gameViewModel.updateQuestionSeenDate(question)
+                        showNextButton = true
+                        // navController.popBackStack()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Valider", fontSize = policeSize.sp)
+                }
+            }
+            else {
+                Button(
+                    onClick = {
+                        showNextQuestion = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Question suivante", fontSize = policeSize.sp)
+                }
             }
         }
+    }
+
+    LaunchedEffect(showNextQuestion) {
+        question?.let { currentQuestion ->
+            handleNextQuestionNavigation(setId = currentQuestion.questionSetId, gameViewModel = gameViewModel, navController = navController)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private suspend fun handleNextQuestionNavigation(setId: Int, gameViewModel: GameViewModel, navController: NavHostController) {
+    gameViewModel.getRandomQuestionFromSet(setId).collect { randomQuestion ->
+        if (randomQuestion != null)
+            navigateToRoute(
+                route = "question/" + randomQuestion.questionId.toString(),
+                navController = navController
+            )
+        else
+            navigateToRoute(route = "gameEnded", navController = navController)
     }
 }
 
@@ -114,6 +145,17 @@ fun ECard(
     }
 }
 
+@Composable
+fun GameEnded(settingsViewModel: SettingsViewModel, navController: NavHostController) {
+    val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
+    val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
+
+    Column {
+        TitleWithContentRow(title = "Question", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
+        TitleWithContentRow(title = "Aucune question restante pour ce jeu de question !", fontSize = policeSize)
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun GameScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, navController: NavHostController) {
@@ -123,22 +165,26 @@ fun GameScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewMode
     var selectedSetId by remember { mutableStateOf<Int?>(null) }
 
     Column {
-        TitleWithContentRow(title = "Sujets du jour", fontSize = policeTitleSize)
-        LazyColumn {
-            items(questionsSet) { questionSet ->
-                ECard(text = questionSet.name, fontSize = policeSize, modifier = Modifier.clickable {
-                    selectedSetId = questionSet.setId
-                })
+        TitleWithContentRow(title = "Sujets du jour", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
+        if (questionsSet.isEmpty()) {
+            TitleWithContentRow(title = "Aucun sujet restant pour aujourd'hui, revenez demain !", fontSize = policeSize)
+        }
+        else {
+            LazyColumn {
+                items(questionsSet) { questionSet ->
+                    ECard(text = questionSet.name, fontSize = policeSize, modifier = Modifier.clickable {
+                        selectedSetId = questionSet.setId
+                    })
+                }
             }
         }
     }
 
     LaunchedEffect(selectedSetId) {
         selectedSetId?.let { setId ->
-            gameViewModel.getQuestionsForSet(setId).collect { questions ->
-                val randomQuestion = questions.randomOrNull()
+            gameViewModel.getRandomQuestionFromSet(setId).collect { randomQuestion ->
                 randomQuestion?.let { question ->
-                    navController.navigate("question/${question.questionId}")
+                    navigateToRoute(route = "question/" + question.questionId.toString(), navController = navController)
                     selectedSetId = null
                 }
             }
