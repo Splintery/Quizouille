@@ -8,6 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -16,7 +18,7 @@ fun TitleWithContentRow(title: String, fontSize: Int, content: @Composable (() -
     Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
-        Text(text = title, fontSize = fontSize.sp, modifier = Modifier.weight(1f))
+        Text(text = title, fontSize = fontSize.sp, fontWeight = FontWeight.Bold)
         content?.invoke()
     }
 }
