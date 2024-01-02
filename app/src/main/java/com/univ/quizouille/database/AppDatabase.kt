@@ -6,8 +6,9 @@ import androidx.room.Room.databaseBuilder
 import androidx.room.RoomDatabase
 import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
+import com.univ.quizouille.model.QuestionSetStatistics
 
-@Database(entities = [QuestionSet::class, Question::class], version = 9, exportSchema = false)
+@Database(entities = [QuestionSet::class, Question::class, QuestionSetStatistics::class], version = 9, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao
 

@@ -48,6 +48,11 @@ fun handleAnswerValidation(answer: String, question: Question, gameViewModel: Ga
         gameViewModel.failQuestion(question)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+fun handleTimeout(question: Question, gameViewModel: GameViewModel) {
+    gameViewModel.failQuestion(question)
+}
+
 @Composable
 fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit) {
     Button(
@@ -81,7 +86,6 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
             delay(1000)
             timeLeft -= 1
         }
-
     }
 
     Column(
@@ -99,7 +103,7 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
         TitleWithContentRow(title = "Question", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
         question?.let { question ->
             if (timeLeft == 0) {
-                gameViewModel.failQuestion(question)
+                handleTimeout(question = question, gameViewModel = gameViewModel)
                 showNextButton = true
             }
             ECard(text = question.content, fontSize = policeSize)

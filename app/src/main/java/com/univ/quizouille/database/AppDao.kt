@@ -6,9 +6,13 @@ import androidx.room.Query
 import androidx.room.Update
 import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
+import com.univ.quizouille.model.QuestionSetStatistics
 import kotlinx.coroutines.flow.Flow
 @Dao
 interface AppDao {
+    @Insert
+    suspend fun insertQuestionSetStats(questionSetStatistics: QuestionSetStatistics)
+
     @Insert
     suspend fun insertQuestionSet(questionSet: QuestionSet)
 
@@ -24,6 +28,12 @@ interface AppDao {
     @Query("SELECT * FROM questions WHERE questionId = :questionId")
     fun getQuestionById(questionId: Int): Flow<Question>
 
+    @Query("SELECT * FROM question_set_statistics WHERE questionSetId= :setId")
+    fun getSetStatisticsById(setId: Int): Flow<QuestionSetStatistics>
+
     @Update
     suspend fun updateQuestion(question: Question)
+
+    @Update
+    suspend fun updateQuestionSetStats(questionSetStatistics: QuestionSetStatistics)
 }

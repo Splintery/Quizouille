@@ -21,6 +21,7 @@ import androidx.compose.material.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -86,6 +87,13 @@ fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: Settings
             composable("gameEnded") {
                 GameEnded(settingsViewModel = settingsViewModel, navController = navController)
             }
+            composable("statistics") {
+                StatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
+            }
+            composable("statistics/{setId}") { navBackStackEntry ->
+                val setId = navBackStackEntry.arguments?.getString("setId") ?: "1"
+                ShowStatisticsScreen(setId = setId.toInt(), gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)
+            }
         }
     }
 }
@@ -98,15 +106,13 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
     val gameRoute = "game"
     val editRoute = "edit"
     val settingsRoute = "settings"
+    val statisticsRoute = "statistics"
 
     BottomNavigationItem(
         selected = currentRoute == gameRoute,
         onClick = {
             if (currentRoute != gameRoute) {
-                navigateToRoute(
-                    route = gameRoute,
-                    navController = navController
-                )
+                navigateToRoute(route = gameRoute, navController = navController)
             }
         },
         icon = { Icon(Icons.Outlined.PlayArrow, contentDescription = "Play menu")}
@@ -115,24 +121,27 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
         selected = currentRoute == editRoute,
         onClick = {
             if (currentRoute != editRoute) {
-                navigateToRoute(
-                    route = editRoute,
-                    navController = navController
-                )
+                navigateToRoute(route = editRoute, navController = navController)
             }
         },
         icon = { Icon(Icons.Outlined.Edit, contentDescription = "Edit menu")}
     )
     BottomNavigationItem(
-        selected = currentRoute == "settings",
+        selected = currentRoute == settingsRoute,
         onClick = {
             if (currentRoute != settingsRoute) {
-                navigateToRoute(
-                    route = settingsRoute,
-                    navController = navController
-                )
+                navigateToRoute(route = settingsRoute, navController = navController)
             }
         },
         icon = { Icon(Icons.Outlined.Settings, contentDescription = "Settings menu")}
+    )
+    BottomNavigationItem(
+        selected = currentRoute == statisticsRoute,
+        onClick = {
+            if (currentRoute != statisticsRoute) {
+                navigateToRoute(route = statisticsRoute, navController = navController)
+            }
+        },
+        icon = { Icon(Icons.Outlined.List, contentDescription = "Statistics menu")}
     )
 }
