@@ -37,14 +37,13 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
     var errorMessage by mutableStateOf("")
     val questionSetsFlow = dao.getAllQuestionSets()
     var questionFlow = dao.getQuestionById(0)
-    var setStatisticsFlow = dao.getSetStatisticsById(0)
     var questionSetFlow = dao.getQuestionSetById(0)
 
     // Statistiques
-    private var allSetsStatisticsFlow = dao.getSetsStatistics()
+    var setStatisticsFlow = dao.getSetStatisticsById(0)
     var totalCorrectCount by mutableIntStateOf(0)
     var totalAskedCount by mutableIntStateOf(0)
-    var lastTrainedDate by mutableStateOf("")
+    var daysSinceTraining by mutableIntStateOf(0)
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun shouldShowQuestion(question: Question, currentDate: LocalDate) : Boolean {
@@ -97,11 +96,24 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
         questionSetFlow = dao.getQuestionSetById(setId = setId)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun fetchAllSetsStatistics() {
         viewModelScope.launch {
             dao.getSetsStatistics().collect { statisticsList ->
                 totalCorrectCount = statisticsList.sumOf { it.correctCount }
                 totalAskedCount = statisticsList.sumOf { it.totalAsked }
+
+                var minDaysDiff: Long = Long.MAX_VALUE
+                val currentDate = LocalDate.now()
+                for (stats in statisticsList) {
+                    val statDate = stats.lastTrainedDate.takeIf { it.isNotBlank() }?.let { stringToLocalDate(it) }
+                    statDate?.let {
+                        val daysDiff = ChronoUnit.DAYS.between(it, currentDate)
+                        if (daysDiff < minDaysDiff)
+                            minDaysDiff = daysDiff
+                    }
+                }
+                daysSinceTraining = minDaysDiff.toInt()
             }
         }
     }

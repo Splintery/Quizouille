@@ -53,6 +53,11 @@ fun handleTimeout(question: Question, gameViewModel: GameViewModel) {
     gameViewModel.failQuestion(question)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+fun handleReveal(question: Question, gameViewModel: GameViewModel) {
+    gameViewModel.failQuestion(question)
+}
+
 @Composable
 fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit) {
     Button(
@@ -111,17 +116,16 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
                 value = answer,
                 onValueChange = { answer = it },
                 label = { Text("Réponse") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 enabled = !showNextButton
             )
             if (!showNextButton) {
                 QuestionButton(buttonText = "Valider", fontSize = policeSize) {
-                    handleAnswerValidation(answer, question, gameViewModel)
+                    handleAnswerValidation(answer = answer, question = question, gameViewModel = gameViewModel)
                     showNextButton = true
                 }
                 QuestionButton(buttonText = "Afficher réponse", fontSize = policeSize) {
+                    handleReveal(question = question, gameViewModel = gameViewModel)
                     answer = question.answer
                     showNextButton = true
                 }
@@ -143,6 +147,7 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
         }
     }
 }
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 private suspend fun handleNextQuestionNavigation(setId: Int, gameViewModel: GameViewModel, navController: NavHostController) {

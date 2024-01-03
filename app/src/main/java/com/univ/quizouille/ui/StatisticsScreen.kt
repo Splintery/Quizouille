@@ -112,8 +112,9 @@ fun ShowStatisticsScreen(setId: Int, gameViewModel: GameViewModel, settingsViewM
                 val daysSinceLastShown = ChronoUnit.DAYS.between(stringToLocalDate(stats.lastTrainedDate), currentDate)
                 TitleWithContentRow(title = "Jours depuis le dernier entrainement: $daysSinceLastShown", fontSize = policeSize)
             }
-        } ?:
-        TitleWithContentRow(title = "Aucune statistiques disponibles pour ce jeu.", fontSize = policeSize)
+            else
+                TitleWithContentRow(title = "Aucun entraînement effectué", fontSize = policeSize)
+        }
     }
 }
 
@@ -130,7 +131,7 @@ fun ShowAllStatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: Set
 
     val totalCorrectCount = gameViewModel.totalCorrectCount
     val totalAskedCount = gameViewModel.totalAskedCount
-    val lastTrainedDate = gameViewModel.lastTrainedDate
+    val daysSinceTraining = gameViewModel.daysSinceTraining
 
     Column(
         modifier = Modifier
@@ -142,7 +143,9 @@ fun ShowAllStatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: Set
         TitleWithContentRow(title = "Statistiques: Tous les jeux", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
         TitleWithContentRow(title = "Bonnes réponses: $totalCorrectCount", fontSize = policeSize)
         TitleWithContentRow(title = "Total répondu: $totalAskedCount", fontSize = policeSize)
-        if (lastTrainedDate != "")
-            TitleWithContentRow(title = "Jours depuis le dernier entrainement: $lastTrainedDate", fontSize = policeSize)
+        if (daysSinceTraining >= 0)
+            TitleWithContentRow(title = "Jours depuis le dernier entrainement: $daysSinceTraining", fontSize = policeSize)
+        else
+            TitleWithContentRow(title = "Aucun entraînement effectué", fontSize = policeSize)
     }
 }
