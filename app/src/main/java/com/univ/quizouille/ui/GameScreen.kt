@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.SnackbarDuration
+import androidx.compose.material.SnackbarHostState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -41,11 +43,15 @@ import com.univ.quizouille.viewmodel.SettingsViewModel
 import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun handleAnswerValidation(answer: String, question: Question, gameViewModel: GameViewModel) {
-    if (answer.equals(question.answer, ignoreCase = true))
+fun handleAnswerValidation(answer: String, question: Question, gameViewModel: GameViewModel): Boolean {
+    return if (answer.equals(question.answer, ignoreCase = true)) {
         gameViewModel.successQuestion(question)
-    else
+        true
+    }
+    else {
         gameViewModel.failQuestion(question)
+        false
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -70,7 +76,13 @@ fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel) {
+fun QuestionScreen(
+    questionId: Int,
+    navController: NavHostController,
+    gameViewModel: GameViewModel,
+    settingsViewModel: SettingsViewModel,
+    snackbarHostState: SnackbarHostState
+) {
     // on met à jour la question actuelle via une coroutine
     LaunchedEffect(questionId) {
         gameViewModel.fetchQuestionById(questionId = questionId)
@@ -85,8 +97,14 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
     var showNextQuestion by remember { mutableStateOf(false) }
     var timeLeft by remember { mutableIntStateOf(timerFlow) }
 
-    LaunchedEffect(key1 = questionId, key2 = showNextButton) {
-        timeLeft = timerFlow // Reset timer for each new question
+    // Déclencheurs Snackbar
+    var successQuestion by remember { mutableStateOf(false) }
+    var failQuestion by remember { mutableStateOf(false) }
+    var revealQuestion by remember { mutableStateOf(false) }
+
+    // Le timer continue tant qu'une réponse n'a pas été donnée
+    LaunchedEffect(questionId, showNextButton) {
+        timeLeft = timerFlow
         while (timeLeft > 0 && !showNextButton) {
             delay(1000)
             timeLeft -= 1
@@ -94,7 +112,9 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
         if (!showNextButton) {
@@ -116,18 +136,24 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
                 value = answer,
                 onValueChange = { answer = it },
                 label = { Text("Réponse") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 enabled = !showNextButton
             )
             if (!showNextButton) {
                 QuestionButton(buttonText = "Valider", fontSize = policeSize) {
-                    handleAnswerValidation(answer = answer, question = question, gameViewModel = gameViewModel)
+                    if (handleAnswerValidation(answer = answer, question = question, gameViewModel = gameViewModel))
+                        successQuestion = true
+                    else
+                        failQuestion = true
                     showNextButton = true
                 }
                 QuestionButton(buttonText = "Afficher réponse", fontSize = policeSize) {
                     handleReveal(question = question, gameViewModel = gameViewModel)
                     answer = question.answer
                     showNextButton = true
+                    revealQuestion = true
                 }
             }
             else {
@@ -144,6 +170,18 @@ fun QuestionScreen(questionId: Int, navController: NavHostController, gameViewMo
                 setId = currentQuestion.questionSetId,
                 gameViewModel = gameViewModel,
                 navController = navController)
+        }
+    }
+
+    LaunchedEffect(successQuestion, failQuestion, revealQuestion) {
+        if (successQuestion || failQuestion || revealQuestion) {
+            val message =
+                if (successQuestion) "Bonne réponse !"
+                else if (failQuestion)
+                    "Mauvaise réponse..."
+                else
+                    "Réponse affichée, réessayez une prochaine fois !"
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Long)
         }
     }
 }
@@ -201,7 +239,11 @@ fun GameEnded(settingsViewModel: SettingsViewModel, navController: NavHostContro
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun GameScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, navController: NavHostController) {
+fun GameScreen(
+    gameViewModel: GameViewModel,
+    settingsViewModel: SettingsViewModel,
+    navController: NavHostController
+) {
     val questionsSet by gameViewModel.getQuestionSetsForToday().collectAsState(listOf())
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)

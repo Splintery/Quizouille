@@ -30,8 +30,8 @@ import com.univ.quizouille.viewmodel.SettingsViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "RememberReturnType")
 @Composable
-fun EditScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel) {
-    val snackbarHostState = remember { SnackbarHostState() }
+fun EditScreen(
+    gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, snackbarHostState: SnackbarHostState) {
     var setId by remember { mutableIntStateOf(1) }
     var question by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("") }

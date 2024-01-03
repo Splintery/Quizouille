@@ -5,14 +5,11 @@
 
 package com.univ.quizouille.ui
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
@@ -24,22 +21,13 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -64,38 +52,45 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel()) {
     val navController = rememberNavController()
+    val snackbarHostState = remember { SnackbarHostState() }
     gameViewModel.insertSampleData()
 
-    Scaffold(bottomBar = {
+    Scaffold(snackbarHost = { SnackbarHost (snackbarHostState) },
+        bottomBar = {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         if (currentRoute != "question/{questionId}")
             BottomBar(navController = navController) }) { paddingValues ->
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
             composable("game") {
-                GameScreen(gameViewModel, settingsViewModel, navController)
+                GameScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
             }
             composable("edit") {
-                EditScreen(gameViewModel, settingsViewModel)
+                EditScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
+                    snackbarHostState = snackbarHostState)
             }
             composable("settings") {
                 SettingsScreen(settingsViewModel)
             }
             composable("question/{questionId}") {navBackStackEntry ->
                 val questionId = navBackStackEntry.arguments?.getString("questionId") ?: "0"
-                QuestionScreen(questionId = questionId.toInt(), gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
+                QuestionScreen(questionId = questionId.toInt(), gameViewModel = gameViewModel,
+                    settingsViewModel = settingsViewModel, navController = navController,
+                    snackbarHostState = snackbarHostState)
             }
             composable("gameEnded") {
                 GameEnded(settingsViewModel = settingsViewModel, navController = navController)
             }
             composable("statistics") {
-                StatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
+                StatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
+                    navController = navController)
             }
-            composable("statistics/all") { navBackStackEntry ->
+            composable("statistics/all") {
                 ShowAllStatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)
             }
             composable("statistics/{setId}") { navBackStackEntry ->
                 val setId = navBackStackEntry.arguments?.getString("setId") ?: "1"
-                ShowStatisticsScreen(setId = setId.toInt(), gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)
+                ShowStatisticsScreen(setId = setId.toInt(), gameViewModel = gameViewModel,
+                    settingsViewModel = settingsViewModel)
             }
         }
     }
