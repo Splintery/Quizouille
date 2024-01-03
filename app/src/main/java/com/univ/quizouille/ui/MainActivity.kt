@@ -90,6 +90,9 @@ fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: Settings
             composable("statistics") {
                 StatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
             }
+            composable("statistics/all") { navBackStackEntry ->
+                ShowAllStatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)
+            }
             composable("statistics/{setId}") { navBackStackEntry ->
                 val setId = navBackStackEntry.arguments?.getString("setId") ?: "1"
                 ShowStatisticsScreen(setId = setId.toInt(), gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)

@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -29,6 +30,7 @@ import androidx.navigation.NavHostController
 import com.univ.quizouille.model.QuestionSetStatistics
 import com.univ.quizouille.ui.components.TitleWithContentRow
 import com.univ.quizouille.utilities.navigateToRoute
+import com.univ.quizouille.utilities.navigateToRouteNoPopUp
 import com.univ.quizouille.utilities.stringToLocalDate
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
@@ -42,6 +44,7 @@ fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsVi
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
     var selectedSetId by remember { mutableStateOf<Int?>(null) }
+    var showNextButton by remember { mutableStateOf<Boolean?>(null) }
 
     Column {
         TitleWithContentRow(title = "Statistiques", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
@@ -49,6 +52,11 @@ fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsVi
             TitleWithContentRow(title = "Aucun jeu de questions disponible actuellement", fontSize = policeSize)
         }
         else {
+            Row {
+                ECard(text = "Tous les jeux", fontSize = policeSize, modifier = Modifier.clickable {
+                    showNextButton = true
+                })
+            }
             LazyColumn {
                 items(questionsSet) { questionSet ->
                     ECard(text = questionSet.name, fontSize = policeSize, modifier = Modifier.clickable {
@@ -61,7 +69,13 @@ fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsVi
 
     LaunchedEffect(selectedSetId) {
         selectedSetId?.let { setId ->
-            navigateToRoute(route = "statistics/$setId", navController = navController)
+            navigateToRouteNoPopUp(route = "statistics/$setId", navController = navController)
+        }
+    }
+
+    LaunchedEffect(showNextButton) {
+        showNextButton?.let { _ ->
+            navigateToRouteNoPopUp(route = "statistics/all", navController = navController)
         }
     }
 }
@@ -75,23 +89,60 @@ fun ShowStatisticsScreen(setId: Int, gameViewModel: GameViewModel, settingsViewM
 
     LaunchedEffect(setId) {
         gameViewModel.fetchSetStatisticsById(setId = setId)
+        gameViewModel.fetchQuestionSet(setId = setId)
     }
 
     val questionSetStatistics by gameViewModel.setStatisticsFlow.collectAsState(initial = null)
+    val questionSet by gameViewModel.questionSetFlow.collectAsState(initial = null)
     val currentDate = LocalDate.now()
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         questionSetStatistics?.let { stats ->
-            TitleWithContentRow(title = "Statistiques", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
-            Text("Bonnes réponses / Total: ${stats.correctCount}/${stats.totalAsked}", fontSize = policeSize.sp)
+            val setName = questionSet?.name
+            TitleWithContentRow(title = "Statistiques: $setName", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
+            TitleWithContentRow(title = "Bonnes réponses: ${stats.correctCount}", fontSize = policeSize)
+            TitleWithContentRow(title = "Total répondu: ${stats.totalAsked}", fontSize = policeSize)
             if (stats.lastTrainedDate.isNotEmpty()) {
                 val daysSinceLastShown = ChronoUnit.DAYS.between(stringToLocalDate(stats.lastTrainedDate), currentDate)
-                Text("Jours depuis le dernier entrainement: $daysSinceLastShown", fontSize = policeSize.sp)
+                TitleWithContentRow(title = "Jours depuis le dernier entrainement: $daysSinceLastShown", fontSize = policeSize)
             }
-        } ?: Text("Aucune statistique disponible pour ce jeu.", fontSize = policeSize.sp)
+        } ?:
+        TitleWithContentRow(title = "Aucune statistiques disponibles pour ce jeu.", fontSize = policeSize)
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ShowAllStatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel) {
+    val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
+    val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
+
+    LaunchedEffect(true) {
+        gameViewModel.fetchAllSetsStatistics()
+    }
+
+    val totalCorrectCount = gameViewModel.totalCorrectCount
+    val totalAskedCount = gameViewModel.totalAskedCount
+    val lastTrainedDate = gameViewModel.lastTrainedDate
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TitleWithContentRow(title = "Statistiques: Tous les jeux", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
+        TitleWithContentRow(title = "Bonnes réponses: $totalCorrectCount", fontSize = policeSize)
+        TitleWithContentRow(title = "Total répondu: $totalAskedCount", fontSize = policeSize)
+        if (lastTrainedDate != "")
+            TitleWithContentRow(title = "Jours depuis le dernier entrainement: $lastTrainedDate", fontSize = policeSize)
     }
 }

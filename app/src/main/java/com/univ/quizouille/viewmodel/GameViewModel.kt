@@ -5,6 +5,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 import com.univ.quizouille.utilities.stringToLocalDate
+import kotlinx.coroutines.flow.collect
 
 class GameViewModel(private val application: Application) : AndroidViewModel(application) {
     private val dao = (application as AppApplication).database.appDao()
@@ -36,6 +38,13 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
     val questionSetsFlow = dao.getAllQuestionSets()
     var questionFlow = dao.getQuestionById(0)
     var setStatisticsFlow = dao.getSetStatisticsById(0)
+    var questionSetFlow = dao.getQuestionSetById(0)
+
+    // Statistiques
+    private var allSetsStatisticsFlow = dao.getSetsStatistics()
+    var totalCorrectCount by mutableIntStateOf(0)
+    var totalAskedCount by mutableIntStateOf(0)
+    var lastTrainedDate by mutableStateOf("")
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun shouldShowQuestion(question: Question, currentDate: LocalDate) : Boolean {
@@ -82,6 +91,19 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
 
     fun fetchSetStatisticsById(setId: Int) {
         setStatisticsFlow = dao.getSetStatisticsById(setId = setId)
+    }
+
+    fun fetchQuestionSet(setId: Int) {
+        questionSetFlow = dao.getQuestionSetById(setId = setId)
+    }
+
+    fun fetchAllSetsStatistics() {
+        viewModelScope.launch {
+            dao.getSetsStatistics().collect { statisticsList ->
+                totalCorrectCount = statisticsList.sumOf { it.correctCount }
+                totalAskedCount = statisticsList.sumOf { it.totalAsked }
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

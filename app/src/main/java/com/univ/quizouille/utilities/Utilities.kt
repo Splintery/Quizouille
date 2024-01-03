@@ -14,6 +14,12 @@ fun navigateToRoute(route: String, navController: NavController) {
     }
 }
 
+fun navigateToRouteNoPopUp(route: String, navController: NavController) {
+    navController.navigate(route) {
+        launchSingleTop = true
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun stringToLocalDate(dateString: String): LocalDate? {
     return try {

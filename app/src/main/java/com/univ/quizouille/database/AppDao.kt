@@ -31,6 +31,12 @@ interface AppDao {
     @Query("SELECT * FROM question_set_statistics WHERE questionSetId= :setId")
     fun getSetStatisticsById(setId: Int): Flow<QuestionSetStatistics>
 
+    @Query("SELECT * FROM question_set_statistics")
+    fun getSetsStatistics(): Flow<List<QuestionSetStatistics>>
+
+    @Query("SELECT * FROM question_sets WHERE setId= :setId")
+    fun getQuestionSetById(setId: Int): Flow<QuestionSet>
+
     @Update
     suspend fun updateQuestion(question: Question)
 
