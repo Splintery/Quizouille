@@ -1,7 +1,8 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 
 package com.univ.quizouille.ui
 
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
+import com.univ.quizouille.services.AppNotificationManager
 import com.univ.quizouille.ui.components.TitleWithContentRow
 import com.univ.quizouille.viewmodel.SettingsViewModel
 
@@ -47,12 +49,31 @@ fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
     )
 }
 
+fun handleNotificationsMode(
+    mode: Boolean,
+    settingsViewModel: SettingsViewModel,
+    notificationManager: AppNotificationManager,
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>) {
+    if (mode) {
+        if(notificationManager.hasNotificationPermission())
+            settingsViewModel.setNotifications(true)
+        else
+            notificationManager.requestNotificationPermission(permissionLauncher)
+    }
+    else
+        settingsViewModel.setNotifications(false)
+}
+
 @Composable
-fun SettingsScreen(settingsViewModel: SettingsViewModel) {
+fun SettingsScreen(
+    settingsViewModel: SettingsViewModel,
+    notificationManager: AppNotificationManager,
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
+) {
     val questionDelay by settingsViewModel.questionDelayFlow.collectAsState(initial = 10)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
-    val notificationsMode by settingsViewModel.notificationsFlow.collectAsState(initial = true)
+    val notificationsMode by settingsViewModel.notificationsFlow.collectAsState(initial = false)
     val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 24)
 
     Column {
@@ -60,7 +81,14 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
         TitleWithContentRow(title = "Notifications", fontSize = policeSize) {
             Switch(
                 checked = notificationsMode,
-                onCheckedChange = { settingsViewModel.setNotifications(it) })
+                onCheckedChange = {
+                    handleNotificationsMode(
+                        mode = it,
+                        settingsViewModel = settingsViewModel,
+                        notificationManager = notificationManager,
+                        permissionLauncher = permissionLauncher
+                    )
+                })
         }
         if (notificationsMode) {
             // TODO snackbar pour dire que c'est entre 1 et 24

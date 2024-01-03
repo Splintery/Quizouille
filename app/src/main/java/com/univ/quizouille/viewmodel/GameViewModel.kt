@@ -2,7 +2,6 @@ package com.univ.quizouille.viewmodel
 
 import android.app.Application
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -10,26 +9,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.univ.quizouille.database.AppApplication
 import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
 import com.univ.quizouille.model.QuestionSetStatistics
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.lang.Exception
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 import com.univ.quizouille.utilities.stringToLocalDate
-import kotlinx.coroutines.flow.collect
 
 class GameViewModel(private val application: Application) : AndroidViewModel(application) {
     private val dao = (application as AppApplication).database.appDao()

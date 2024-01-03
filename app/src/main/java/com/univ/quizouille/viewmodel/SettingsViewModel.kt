@@ -32,7 +32,7 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
     }
 
     val notificationsFlow = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.NOTIFICATIONS] ?: true
+        preferences[PreferencesKeys.NOTIFICATIONS] ?: false
     }
 
     val notificationsFreqFlow = dataStore.data.map { preferences ->

@@ -7,8 +7,11 @@ package com.univ.quizouille.ui
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
@@ -33,33 +36,46 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.univ.quizouille.services.AppNotificationManager
 import com.univ.quizouille.ui.theme.EditScreen
 import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 
+
 class MainActivity : ComponentActivity() {
+    private lateinit var notificationManager: AppNotificationManager
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        notificationManager = AppNotificationManager(this)
+        notificationManager.createChannel()
+
         setContent {
-            Main()
+            Main(notificationManager = notificationManager)
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel()) {
+fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel(), notificationManager: AppNotificationManager) {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     gameViewModel.insertSampleData()
 
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        Log.d("permissions", if(it)"granted" else "denied")
+    }
+
     Scaffold(snackbarHost = { SnackbarHost (snackbarHostState) },
         bottomBar = {
-        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-        if (currentRoute != "question/{questionId}")
-            BottomBar(navController = navController) }) { paddingValues ->
+            val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+            if (currentRoute != "question/{questionId}") {
+                BottomBar(navController = navController) }
+        }) { paddingValues ->
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
             composable("game") {
                 GameScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
@@ -69,7 +85,7 @@ fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: Settings
                     snackbarHostState = snackbarHostState)
             }
             composable("settings") {
-                SettingsScreen(settingsViewModel)
+                SettingsScreen(settingsViewModel = settingsViewModel, notificationManager = notificationManager, permissionLauncher = permissionLauncher)
             }
             composable("question/{questionId}") {navBackStackEntry ->
                 val questionId = navBackStackEntry.arguments?.getString("questionId") ?: "0"
@@ -95,7 +111,6 @@ fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: Settings
         }
     }
 }
-
 
 @Composable
 fun BottomBar(navController: NavHostController) = BottomNavigation {
