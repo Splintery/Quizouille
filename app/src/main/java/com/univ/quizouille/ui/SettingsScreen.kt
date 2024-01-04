@@ -2,6 +2,7 @@
 
 package com.univ.quizouille.ui
 
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -9,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,8 +22,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
+import com.univ.quizouille.services.AppNotificationManager
 import com.univ.quizouille.ui.components.TitleWithContentRow
+import com.univ.quizouille.utilities.frequencyUnits
 import com.univ.quizouille.viewmodel.SettingsViewModel
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 
 @Composable
 fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
@@ -48,28 +55,30 @@ fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
 }
 
 @Composable
-fun SettingsScreen(settingsViewModel: SettingsViewModel) {
+fun SettingsScreen(
+    settingsViewModel: SettingsViewModel,
+    notificationManager: AppNotificationManager,
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
+) {
     val questionDelay by settingsViewModel.questionDelayFlow.collectAsState(initial = 10)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
-    val notificationsMode by settingsViewModel.notificationsFlow.collectAsState(initial = true)
-    val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 24)
+    val notificationsMode by settingsViewModel.notificationsFlow.collectAsState(initial = false)
 
     Column {
         TitleWithContentRow(title = "Paramètres", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
         TitleWithContentRow(title = "Notifications", fontSize = policeSize) {
             Switch(
                 checked = notificationsMode,
-                onCheckedChange = { settingsViewModel.setNotifications(it) })
+                onCheckedChange = {
+                    settingsViewModel.setNotifications(
+                        mode = it,
+                        notificationManager = notificationManager,
+                        permissionLauncher = permissionLauncher)
+                })
         }
         if (notificationsMode) {
-            // TODO snackbar pour dire que c'est entre 1 et 24
-            TitleWithContentRow(title = "Fréquence des notifications", fontSize = policeSize) {
-                SettingsTextField(
-                    value = notificationsFrequency.toString(),
-                    label = "heure",
-                    onDone = { settingsViewModel.setNotificationsFrequency(it.toInt()) })
-            }
+            NotificationSettingsSection(settingsViewModel = settingsViewModel)
         }
         TitleWithContentRow(title = "Temps de réponse aux questions", fontSize = policeSize) {
             SettingsTextField(
@@ -85,5 +94,49 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                 label = "",
                 onDone = { settingsViewModel.setPoliceSize(it.toInt()) })
         }
+    }
+}
+
+@Composable
+fun NotificationSettingsSection(settingsViewModel: SettingsViewModel) {
+    val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 1)
+    val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
+    val unitString by settingsViewModel.frequencyUnitFlow.collectAsState(initial = "")
+
+    TitleWithContentRow(title = "Fréquence des notifications", fontSize = policeSize) {
+        SettingsTextField(
+            value = notificationsFrequency.toString(),
+            label = unitString,
+            onDone = { settingsViewModel.setNotificationsFrequency(it.toInt()) })
+    }
+
+    var expanded by remember { mutableStateOf(false) }
+    val settingsUnit by settingsViewModel.frequencyUnitFlow.collectAsState(initial = "heures")
+
+    TitleWithContentRow(title = "Unité", fontSize = policeSize) {
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+            TextField(
+                modifier = Modifier.menuAnchor(),
+                readOnly = true,
+                value = settingsUnit,
+                onValueChange = {},
+                label = { Text("Unité") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                for ((unit, _) in frequencyUnits) {
+                    DropdownMenuItem(text = { Text(unit) }, onClick = {
+                        settingsViewModel.setFrequencyTimeUnit(unit)
+                        expanded = false
+                    },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding)
+                }
+            }
+        }
+
     }
 }

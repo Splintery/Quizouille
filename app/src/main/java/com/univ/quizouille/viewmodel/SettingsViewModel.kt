@@ -3,16 +3,24 @@ package com.univ.quizouille.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
+import com.univ.quizouille.services.AppNotificationManager
+import com.univ.quizouille.services.NotificationWorker
+import com.univ.quizouille.utilities.frequencyUnits
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name ="settings")
 
@@ -32,18 +40,21 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
     }
 
     val notificationsFlow = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.NOTIFICATIONS] ?: true
+        preferences[PreferencesKeys.NOTIFICATIONS] ?: false
     }
 
     val notificationsFreqFlow = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.NOTIFICATIONS_FREQUENCY] ?: 1
+        preferences[PreferencesKeys.NOTIFICATIONS_FREQUENCY] ?: 24
+    }
+
+    val frequencyUnitFlow = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.FREQUENCY_UNIT] ?: "heures"
     }
 
     fun setQuestionDelay(delay: Int) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[PreferencesKeys.QUESTION_DELAY] = delay
-                Log.d("datastore", preferences[PreferencesKeys.QUESTION_DELAY].toString())
             }
         }
     }
@@ -57,10 +68,36 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun setNotifications(mode: Boolean) {
+    private suspend fun enableNotifications() {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS] = true
+        }
+        Log.d("notif", "worker activé !")
+        rescheduleNotificationWorker()
+    }
+
+    private suspend fun disableNotifications() {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS] = false
+        }
+        Log.d("notif", "stoppé...")
+        WorkManager.getInstance(getApplication()).cancelUniqueWork("notification_work")
+    }
+
+    fun setNotifications(
+        mode: Boolean,
+        notificationManager: AppNotificationManager,
+        permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
+    ) {
         viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences[PreferencesKeys.NOTIFICATIONS] = mode
+            if (mode) {
+                if(notificationManager.hasNotificationPermission())
+                    enableNotifications()
+                else
+                    notificationManager.requestNotificationPermission(permissionLauncher)
+            }
+            else {
+                disableNotifications()
             }
         }
     }
@@ -70,14 +107,36 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
             dataStore.edit { preferences ->
                 preferences[PreferencesKeys.NOTIFICATIONS_FREQUENCY] = freq
             }
+            rescheduleNotificationWorker()
         }
     }
 
-    private object PreferencesKeys {
+    fun setFrequencyTimeUnit(stringUnit: String) {
+        viewModelScope.launch {
+            dataStore.edit { preferences ->
+                preferences[PreferencesKeys.FREQUENCY_UNIT] = stringUnit
+            }
+            rescheduleNotificationWorker()
+        }
+    }
+
+    private suspend fun rescheduleNotificationWorker() {
+        val frequency = notificationsFreqFlow.first().toLong()
+        val unit = frequencyUnits[frequencyUnitFlow.first()] ?: TimeUnit.HOURS
+
+        NotificationWorker.scheduleNextWork(
+            context = getApplication(),
+            timeUnit = unit,
+            delay = frequency
+        )
+    }
+
+    object PreferencesKeys {
         val QUESTION_DELAY = intPreferencesKey("question_delay")
         val POLICE_SIZE = intPreferencesKey("police_size")
         val POLICE_TITLE_SIZE = intPreferencesKey("police_title_size")
         val NOTIFICATIONS = booleanPreferencesKey("notifications")
         val NOTIFICATIONS_FREQUENCY = intPreferencesKey("notifications_freq")
+        val FREQUENCY_UNIT = stringPreferencesKey("frequency_unit")
     }
 }

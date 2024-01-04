@@ -6,6 +6,7 @@ import androidx.navigation.NavController
 import java.lang.Exception
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 
 fun navigateToRoute(route: String, navController: NavController) {
     navController.navigate(route) {
@@ -28,3 +29,8 @@ fun stringToLocalDate(dateString: String): LocalDate? {
         null
     }
 }
+
+val frequencyUnits = mapOf(
+    "heures" to TimeUnit.HOURS,
+    "minutes" to TimeUnit.MINUTES,
+    "secondes" to TimeUnit.SECONDS)

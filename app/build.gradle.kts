@@ -87,4 +87,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    //noinspection GradleDependency
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
 }

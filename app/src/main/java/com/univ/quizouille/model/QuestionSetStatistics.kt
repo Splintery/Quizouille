@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.util.TableInfo
 
 @Entity(tableName = "question_set_statistics",
     foreignKeys = [
