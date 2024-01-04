@@ -37,7 +37,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.univ.quizouille.services.AppNotificationManager
-import com.univ.quizouille.ui.theme.EditScreen
+import com.univ.quizouille.ui.EditScreen
 import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel

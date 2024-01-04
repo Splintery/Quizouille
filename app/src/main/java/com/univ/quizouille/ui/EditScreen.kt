@@ -160,11 +160,8 @@ fun EditScreen(
                     verticalArrangement = Arrangement.Center) {
                     Button(onClick = {
                         newSet = !newSet
-                        if (newSet) {
-                            newSetName = ""
-                        } else {
-                            setId = -1
-                        }
+                        newSetName = ""
+                        setId = -1
                     }) {
                         if (newSet) {
                             Image(Icons.Outlined.Clear, contentDescription = "cancel create set")
