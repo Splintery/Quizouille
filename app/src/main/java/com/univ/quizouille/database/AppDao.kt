@@ -8,6 +8,7 @@ import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
 import com.univ.quizouille.model.QuestionSetStatistics
 import kotlinx.coroutines.flow.Flow
+
 @Dao
 interface AppDao {
     @Insert
