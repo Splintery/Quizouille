@@ -49,21 +49,6 @@ fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
     )
 }
 
-fun handleNotificationsMode(
-    mode: Boolean,
-    settingsViewModel: SettingsViewModel,
-    notificationManager: AppNotificationManager,
-    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>) {
-    if (mode) {
-        if(notificationManager.hasNotificationPermission())
-            settingsViewModel.setNotifications(true)
-        else
-            notificationManager.requestNotificationPermission(permissionLauncher)
-    }
-    else
-        settingsViewModel.setNotifications(false)
-}
-
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
@@ -74,7 +59,7 @@ fun SettingsScreen(
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val notificationsMode by settingsViewModel.notificationsFlow.collectAsState(initial = false)
-    val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 24)
+    val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 1)
 
     Column {
         TitleWithContentRow(title = "Paramètres", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
@@ -82,12 +67,10 @@ fun SettingsScreen(
             Switch(
                 checked = notificationsMode,
                 onCheckedChange = {
-                    handleNotificationsMode(
+                    settingsViewModel.setNotifications(
                         mode = it,
-                        settingsViewModel = settingsViewModel,
                         notificationManager = notificationManager,
-                        permissionLauncher = permissionLauncher
-                    )
+                        permissionLauncher = permissionLauncher)
                 })
         }
         if (notificationsMode) {
