@@ -20,7 +20,6 @@ data class Question(
     val questionId: Int = 0,
     val questionSetId: Int,
     val content: String,
-    val answer: String,
     var status: Int = 1,
     var lastShownDate: String = ""
 )

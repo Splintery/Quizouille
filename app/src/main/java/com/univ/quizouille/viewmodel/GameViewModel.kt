@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.univ.quizouille.database.AppApplication
+import com.univ.quizouille.model.Answer
 import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
 import com.univ.quizouille.model.QuestionSetStatistics
@@ -23,20 +25,22 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.lang.Exception
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 import com.univ.quizouille.utilities.stringToLocalDate
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
+import kotlin.Exception
 
 class GameViewModel(private val application: Application) : AndroidViewModel(application) {
     private val dao = (application as AppApplication).database.appDao()
 
     var errorMessage by mutableStateOf("")
-    val questionSetsFlow = dao.getAllQuestionSets()
+    var questionSetsFlow = dao.getAllQuestionSets()
     var questionFlow = dao.getQuestionById(0)
+    var answersFlow = dao.getAllAnswerForQuestion(0)
     var questionSetFlow = dao.getQuestionSetById(0)
 
     // Statistiques
@@ -44,6 +48,10 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
     var totalCorrectCount by mutableIntStateOf(0)
     var totalAskedCount by mutableIntStateOf(0)
     var daysSinceTraining by mutableIntStateOf(0)
+
+    // Edit Screen
+    var lastSetInsertedIdFlow = dao.getLatestSetId()
+    var lastQuestionInsertedIdFlow = dao.getLatestQuestionId()
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun shouldShowQuestion(question: Question, currentDate: LocalDate) : Boolean {
@@ -86,6 +94,7 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
 
     fun fetchQuestionById(questionId: Int) {
         questionFlow = dao.getQuestionById(questionId = questionId)
+        answersFlow = dao.getAllAnswerForQuestion(questionId = questionId)
     }
 
     fun fetchSetStatisticsById(setId: Int) {
@@ -117,16 +126,39 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
             }
         }
     }
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun insertQuestionSet(setName: String) {
+        viewModelScope.launch {
+            try {
+                dao.insertQuestionSet(QuestionSet(name = setName))
+                questionSetsFlow = dao.getAllQuestionSets()
+                lastSetInsertedIdFlow = dao.getLatestSetId()
+            } catch (e: Exception) {
+                errorMessage = "Duplicate data: set allready exist with name $setName"
+            }
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun insertQuestion(setId: Int, question: String, answer: String) {
+    fun insertQuestion(setId: Int, question: String) {
         viewModelScope.launch {
             try {
                 val currentDate = LocalDate.now().toString()
-                dao.insertQuestion(Question(questionSetId = setId, content = question, answer = answer, lastShownDate = currentDate))
+                dao.insertQuestion(Question(questionSetId = setId, content = question, lastShownDate = currentDate))
+                lastQuestionInsertedIdFlow = dao.getLatestQuestionId()
             }
             catch (e: Exception) {
                 errorMessage = "Duplicate data: Failed to insert"
+            }
+        }
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun insertAnswer(questionId: Int, answer: String, correct: Boolean) {
+        viewModelScope.launch {
+            try {
+                dao.insertAnswer(Answer(questionId = questionId, answer = answer, correct = correct))
+            } catch (e: Exception) {
+                errorMessage = "Answer allready exist for question $questionId"
             }
         }
     }
@@ -176,21 +208,87 @@ class GameViewModel(private val application: Application) : AndroidViewModel(app
                 Question(
                     questionSetId = 1,
                     content = "What is Pi?",
-                    answer = "3.14"
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 1,
+                    answer = "3.14",
+                    correct = true
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 1,
+                    answer = "trois-point-quatorze",
+                    correct = true
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 1,
+                    answer = "3.14159265359",
+                    correct = true
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 1,
+                    answer = "4.13",
+                    correct = false
                 )
             )
             dao.insertQuestion(
                 Question(
                     questionSetId = 1,
                     content = "What is 1 + 1",
-                    answer = "2"
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 2,
+                    answer = "2",
+                    correct = true
                 )
             )
             dao.insertQuestion(
                 Question(
                     questionSetId = 2,
                     content = "What is 'apple' in French?",
-                    answer = "pomme"
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 3,
+                    answer = "pomme",
+                    correct = true
+                )
+            )
+            dao.insertQuestion(
+                Question(
+                    questionSetId = 2,
+                    content = "What is 'Strawberry' in French?"
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 4,
+                    answer = "Cerise",
+                    correct = false
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 4,
+                    answer = "Fraise",
+                    correct = true
+                )
+            )
+            dao.insertAnswer(
+                Answer(
+                    questionId = 4,
+                    answer = "Framboise",
+                    correct = false
                 )
             )
         }
