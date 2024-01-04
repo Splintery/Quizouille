@@ -1,10 +1,10 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class
-)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.univ.quizouille.ui
 
+import android.app.DownloadManager
+import android.content.Context
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -36,6 +36,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.univ.quizouille.database.AppApplication
+import com.univ.quizouille.services.AppBroadcastReceiver
+import com.univ.quizouille.services.AppDownloadManager
 import com.univ.quizouille.services.AppNotificationManager
 import com.univ.quizouille.ui.EditScreen
 import com.univ.quizouille.utilities.navigateToRoute
@@ -45,13 +48,25 @@ import com.univ.quizouille.viewmodel.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     private lateinit var notificationManager: AppNotificationManager
+    private lateinit var downloadManager: AppDownloadManager
+    private lateinit var broadcastReceiver: AppBroadcastReceiver
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // initialisation du notification manager
         notificationManager = AppNotificationManager(this)
         notificationManager.createChannel()
+
+        // initialisation du download manager et broadcast receiver
+        downloadManager = AppDownloadManager(this, (application as AppApplication).database.appDao())
+        broadcastReceiver = AppBroadcastReceiver(downloadManager)
+        val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
+        }
 
         setContent {
             Main(notificationManager = notificationManager)

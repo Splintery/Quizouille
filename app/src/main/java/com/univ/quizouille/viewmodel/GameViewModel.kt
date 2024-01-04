@@ -17,6 +17,7 @@ import com.univ.quizouille.model.Answer
 import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
 import com.univ.quizouille.model.QuestionSetStatistics
+import com.univ.quizouille.services.AppDownloadManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,7 @@ import kotlin.Exception
 
 class GameViewModel(private val application: Application) : AndroidViewModel(application) {
     private val dao = (application as AppApplication).database.appDao()
+    private val downloadManager = AppDownloadManager(application, (application as AppApplication).database.appDao())
 
     var errorMessage by mutableStateOf("")
     var questionSetsFlow = dao.getAllQuestionSets()
