@@ -17,7 +17,6 @@ import androidx.compose.material.SnackbarHost
 import androidx.compose.material.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.List
@@ -89,19 +88,24 @@ fun Main(
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
             composable("game") {
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 GameScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
             }
             composable("edit") {
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 EditScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
                     snackbarHostState = snackbarHostState)
             }
             composable("settings") {
                 gameViewModel.resetSnackbarMessage()
-                SettingsScreen(settingsViewModel = settingsViewModel, notificationManager = notificationManager, permissionLauncher = permissionLauncher)
+                settingsViewModel.resetSnackbarMessage()
+                SettingsScreen(settingsViewModel = settingsViewModel, notificationManager = notificationManager,
+                    permissionLauncher = permissionLauncher, snackbarHostState = snackbarHostState)
             }
             composable("question/{questionId}") {navBackStackEntry ->
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 val questionId = navBackStackEntry.arguments?.getString("questionId") ?: "0"
                 QuestionScreen(questionId = questionId.toInt(), gameViewModel = gameViewModel,
                     settingsViewModel = settingsViewModel, navController = navController,
@@ -109,25 +113,30 @@ fun Main(
             }
             composable("gameEnded") {
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 GameEnded(settingsViewModel = settingsViewModel)
             }
             composable("statistics") {
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 StatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
                     navController = navController)
             }
             composable("statistics/all") {
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 ShowAllStatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)
             }
             composable("statistics/{setId}") { navBackStackEntry ->
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 val setId = navBackStackEntry.arguments?.getString("setId") ?: "1"
                 ShowStatisticsScreen(setId = setId.toInt(), gameViewModel = gameViewModel,
                     settingsViewModel = settingsViewModel)
             }
             composable("download") {
                 gameViewModel.resetSnackbarMessage()
+                settingsViewModel.resetSnackbarMessage()
                 DownloadSetsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
                     snackbarHostState = snackbarHostState)
             }

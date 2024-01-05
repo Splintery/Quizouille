@@ -330,7 +330,7 @@ fun QuestionScreen(
 
 /**
  * Récupère une question aléatoire du Viewmodel et change de composable.
- * Si aucune question n'est restante, affiche un composable spécifique
+ * S'il ne reste aucune question possibles dans le jeu de questions, affiche un composable spécifique
  * @param setId Id sur jeu de question dans lequel chercher
  */
 @RequiresApi(Build.VERSION_CODES.O)

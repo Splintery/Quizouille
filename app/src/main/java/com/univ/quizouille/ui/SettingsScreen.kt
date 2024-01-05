@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.SnackbarDuration
+import androidx.compose.material.SnackbarHostState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -31,6 +33,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
@@ -63,7 +66,8 @@ fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     notificationManager: AppNotificationManager,
-    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    snackbarHostState: SnackbarHostState
 ) {
     val questionDelay by settingsViewModel.questionDelayFlow.collectAsState(initial = 10)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
@@ -93,12 +97,18 @@ fun SettingsScreen(
             )
         }
         TitleWithContentRow(title = "Taille de la police", fontSize = policeSize) {
-            // TODO mettre un minimun et un maximum
-            // TODO Launched effect
             SettingsTextField(
                 value = policeSize.toString(),
                 label = "",
                 onDone = { settingsViewModel.setPoliceSize(it.toInt()) })
+        }
+    }
+
+    // Détecte le changement de valeur de `settingsViewModel.snackBarMessage` et lance un SnackBar si non vide
+    LaunchedEffect(settingsViewModel.snackBarMessage) {
+        if (settingsViewModel.snackBarMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(settingsViewModel.snackBarMessage, duration = SnackbarDuration.Short)
+            settingsViewModel.resetSnackbarMessage()
         }
     }
 }

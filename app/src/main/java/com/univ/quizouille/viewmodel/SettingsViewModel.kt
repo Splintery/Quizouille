@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -26,6 +29,11 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name ="set
 
 class SettingsViewModel (application: Application) : AndroidViewModel(application) {
     private val dataStore: DataStore<Preferences> = application.applicationContext.dataStore;
+
+    var snackBarMessage by mutableStateOf("")
+    fun resetSnackbarMessage() {
+        snackBarMessage = ""
+    }
 
     val questionDelayFlow = dataStore.data.map { preferences ->
         preferences[PreferencesKeys.QUESTION_DELAY] ?: 15
@@ -60,6 +68,12 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
     }
 
     fun setPoliceSize(size: Int) {
+        val sizeMin = 8
+        val sizeMax = 20
+        if (size < sizeMin || size > sizeMax) {
+            snackBarMessage = "La taille de la police doit être comprise entre $sizeMin et $sizeMax"
+            return
+        }
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[PreferencesKeys.POLICE_SIZE] = size
