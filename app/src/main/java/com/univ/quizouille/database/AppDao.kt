@@ -16,10 +16,10 @@ interface AppDao {
     suspend fun insertQuestionSetStats(questionSetStatistics: QuestionSetStatistics)
 
     @Insert
-    suspend fun insertQuestionSet(questionSet: QuestionSet)
+    suspend fun insertQuestionSet(questionSet: QuestionSet) : Long
 
     @Insert
-    suspend fun insertQuestion(question: Question)
+    suspend fun insertQuestion(question: Question) : Long
 
     @Insert
     suspend fun insertAnswer(answer: Answer)
@@ -61,4 +61,7 @@ interface AppDao {
 
     @Update
     suspend fun updateQuestionSetStats(questionSetStatistics: QuestionSetStatistics)
+
+    @Update
+    suspend fun updateQuestionSet(questionSet: QuestionSet)
 }

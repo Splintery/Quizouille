@@ -2,9 +2,6 @@
 
 package com.univ.quizouille.ui
 
-import android.app.DownloadManager
-import android.content.Context
-import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -36,11 +33,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.univ.quizouille.database.AppApplication
-import com.univ.quizouille.services.AppBroadcastReceiver
-import com.univ.quizouille.services.AppDownloadManager
 import com.univ.quizouille.services.AppNotificationManager
-import com.univ.quizouille.ui.EditScreen
 import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
@@ -48,8 +41,6 @@ import com.univ.quizouille.viewmodel.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     private lateinit var notificationManager: AppNotificationManager
-    private lateinit var downloadManager: AppDownloadManager
-    private lateinit var broadcastReceiver: AppBroadcastReceiver
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,15 +50,6 @@ class MainActivity : ComponentActivity() {
         notificationManager = AppNotificationManager(this)
         notificationManager.createChannel()
 
-        // initialisation du download manager et broadcast receiver
-        downloadManager = AppDownloadManager(this, (application as AppApplication).database.appDao())
-        broadcastReceiver = AppBroadcastReceiver(downloadManager)
-        val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
-        }
-
         setContent {
             Main(notificationManager = notificationManager)
         }
@@ -76,13 +58,16 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel(), notificationManager: AppNotificationManager) {
+fun Main(
+    gameViewModel: GameViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel(),
+    notificationManager: AppNotificationManager
+) {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
-    gameViewModel.insertSampleData()
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        Log.d("permissions", if(it)"granted" else "denied")
+        Log.d("permissions", if(it) "granted" else "denied")
     }
 
     Scaffold(snackbarHost = { SnackbarHost (snackbarHostState) },
@@ -93,35 +78,48 @@ fun Main(gameViewModel: GameViewModel = viewModel(), settingsViewModel: Settings
         }) { paddingValues ->
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
             composable("game") {
+                gameViewModel.resetSnackbarMessage()
                 GameScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel, navController = navController)
             }
             composable("edit") {
+                gameViewModel.resetSnackbarMessage()
                 EditScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
                     snackbarHostState = snackbarHostState)
             }
             composable("settings") {
+                gameViewModel.resetSnackbarMessage()
                 SettingsScreen(settingsViewModel = settingsViewModel, notificationManager = notificationManager, permissionLauncher = permissionLauncher)
             }
             composable("question/{questionId}") {navBackStackEntry ->
+                gameViewModel.resetSnackbarMessage()
                 val questionId = navBackStackEntry.arguments?.getString("questionId") ?: "0"
                 QuestionScreen(questionId = questionId.toInt(), gameViewModel = gameViewModel,
                     settingsViewModel = settingsViewModel, navController = navController,
                     snackbarHostState = snackbarHostState)
             }
             composable("gameEnded") {
+                gameViewModel.resetSnackbarMessage()
                 GameEnded(settingsViewModel = settingsViewModel, navController = navController)
             }
             composable("statistics") {
+                gameViewModel.resetSnackbarMessage()
                 StatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
                     navController = navController)
             }
             composable("statistics/all") {
+                gameViewModel.resetSnackbarMessage()
                 ShowAllStatisticsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel)
             }
             composable("statistics/{setId}") { navBackStackEntry ->
+                gameViewModel.resetSnackbarMessage()
                 val setId = navBackStackEntry.arguments?.getString("setId") ?: "1"
                 ShowStatisticsScreen(setId = setId.toInt(), gameViewModel = gameViewModel,
                     settingsViewModel = settingsViewModel)
+            }
+            composable("download") {
+                gameViewModel.resetSnackbarMessage()
+                DownloadSetsScreen(gameViewModel = gameViewModel, settingsViewModel = settingsViewModel,
+                    snackbarHostState = snackbarHostState)
             }
         }
     }
@@ -135,6 +133,7 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
     val editRoute = "edit"
     val settingsRoute = "settings"
     val statisticsRoute = "statistics"
+    val downloadSetsRoute = "download"
 
     BottomNavigationItem(
         selected = currentRoute == gameRoute,
@@ -171,5 +170,14 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
             }
         },
         icon = { Icon(Icons.Outlined.List, contentDescription = "Statistics menu")}
+    )
+    BottomNavigationItem(
+        selected = currentRoute == downloadSetsRoute,
+        onClick = {
+            if (currentRoute != downloadSetsRoute) {
+                navigateToRoute(route = downloadSetsRoute, navController = navController)
+            }
+        },
+        icon = { Icon(Icons.Outlined.List, contentDescription = "Download sets menu")}
     )
 }

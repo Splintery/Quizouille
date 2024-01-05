@@ -4,26 +4,21 @@ package com.univ.quizouille.ui
 
 import android.annotation.SuppressLint
 import android.os.Build
-import android.text.Selection
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.Icon
+import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.SnackbarHost
 import androidx.compose.material.SnackbarHostState
 import androidx.compose.material.Switch
@@ -47,16 +42,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.univ.quizouille.model.Answer
 import com.univ.quizouille.model.QuestionSet
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
-import kotlinx.coroutines.flow.first
-import kotlin.math.round
 
 
 fun getFontWeight(setId: Int, itemId: Int): FontWeight {
@@ -257,11 +248,10 @@ fun EditScreen(
         }
     }
 
-    // envoie des snackbars quand une entrée dans la BD n'a pas marché
-    LaunchedEffect(gameViewModel.errorMessage) {
-        if (gameViewModel.errorMessage.isNotEmpty()) {
-            snackbarHostState.showSnackbar(gameViewModel.errorMessage)
-            gameViewModel.errorMessage = ""
+    LaunchedEffect(gameViewModel.snackBarMessage) {
+        if (gameViewModel.snackBarMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(gameViewModel.snackBarMessage, duration = SnackbarDuration.Short)
+            gameViewModel.resetSnackbarMessage()
         }
     }
 }

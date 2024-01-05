@@ -1,10 +1,17 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.univ.quizouille.ui
 
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.Environment
+import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,16 +36,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.univ.quizouille.model.Answer
 import com.univ.quizouille.model.Question
@@ -47,6 +59,7 @@ import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 import kotlinx.coroutines.delay
+import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Question, gameViewModel: GameViewModel): Boolean {
@@ -175,7 +188,9 @@ fun QuestionScreen(
             } else {
 
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
-                    Row(modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 5.dp)) {
+                    Row(modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 5.dp)) {
                         for (index in answers.indices) {
                             if (index % 2 == 0) {
                                 Text(
@@ -193,13 +208,19 @@ fun QuestionScreen(
                                             }
                                         }
                                         .padding(horizontal = 5.dp)
-                                        .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(30))
+                                        .border(
+                                            width = 1.dp,
+                                            color = Color.DarkGray,
+                                            shape = RoundedCornerShape(30)
+                                        )
                                         .padding(vertical = 10.dp, horizontal = 15.dp)
                                 )
                             }
                         }
                     }
-                    Row(modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 5.dp)) {
+                    Row(modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 5.dp)) {
                         for (index in 0..<answers.size) {
                             if (index % 2 == 1) {
                                 Text(
@@ -217,7 +238,11 @@ fun QuestionScreen(
                                             }
                                         }
                                         .padding(horizontal = 5.dp)
-                                        .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(30))
+                                        .border(
+                                            width = 1.dp,
+                                            color = Color.DarkGray,
+                                            shape = RoundedCornerShape(30)
+                                        )
                                         .padding(vertical = 10.dp, horizontal = 15.dp)
                                 )
                             }
