@@ -71,6 +71,7 @@ fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Q
         false
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleMultipleAnswerValidation(answersSelectedId: List<Int>, answers: List<Answer>, question: Question, gameViewModel: GameViewModel): Boolean {
     var res = true
@@ -88,11 +89,21 @@ fun handleMultipleAnswerValidation(answersSelectedId: List<Int>, answers: List<A
     }
 }
 
+/**
+ * Si le temps est écoulé, la question est considérée comme échouée
+ * @param question      La question à mettre à jour
+ * @param gameViewModel Le viewModel dans lequel se trouve le DAO
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleTimeout(question: Question, gameViewModel: GameViewModel) {
     gameViewModel.failQuestion(question)
 }
 
+/**
+ * Si l'utilisateur révèle la réponse, la question est considerée comme échouée
+ * @param question      La question à mettre à jour
+ * @param gameViewModel Le viewModel dans lequel se trouve le DAO
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleReveal(question: Question, gameViewModel: GameViewModel) {
     gameViewModel.failQuestion(question)
@@ -124,7 +135,7 @@ fun QuestionScreen(
     settingsViewModel: SettingsViewModel,
     snackbarHostState: SnackbarHostState
 ) {
-    // on met à jour la question actuelle via une coroutine
+    // on met à jour le flow du Viewmodel avec la question courante
     LaunchedEffect(questionId) {
         gameViewModel.fetchQuestionById(questionId = questionId)
     }
@@ -185,8 +196,8 @@ fun QuestionScreen(
                         .padding(vertical = 8.dp),
                     enabled = !showNextButton
                 )
-            } else {
-
+            }
+            else {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
                     Row(modifier = Modifier
                         .align(Alignment.CenterHorizontally)
@@ -317,6 +328,11 @@ fun QuestionScreen(
 }
 
 
+/**
+ * Récupère une question aléatoire du Viewmodel et change de composable.
+ * Si aucune question n'est restante, affiche un composable spécifique
+ * @param setId Id sur jeu de question dans lequel chercher
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 private suspend fun handleNextQuestionNavigation(setId: Int, gameViewModel: GameViewModel, navController: NavHostController) {
     gameViewModel.getRandomQuestionFromSet(setId).collect { randomQuestion ->
@@ -361,8 +377,11 @@ fun ECard(
     }
 }
 
+/**
+ * Composable indiquant qu'il ne reste aucun question à effectuer aujourd'hui
+ */
 @Composable
-fun GameEnded(settingsViewModel: SettingsViewModel, navController: NavHostController) {
+fun GameEnded(settingsViewModel: SettingsViewModel) {
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
 
@@ -372,13 +391,13 @@ fun GameEnded(settingsViewModel: SettingsViewModel, navController: NavHostContro
     }
 }
 
+/**
+ * Composable affichant l'ensemble des jeux de questions possible ce jour.
+ * Cliquer sur un jeu de question lancera l'entraînement sur une question aléatoire
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun GameScreen(
-    gameViewModel: GameViewModel,
-    settingsViewModel: SettingsViewModel,
-    navController: NavHostController
-) {
+fun GameScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, navController: NavHostController) {
     val questionsSet by gameViewModel.getQuestionSetsForToday().collectAsState(listOf())
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
@@ -400,7 +419,7 @@ fun GameScreen(
         }
     }
 
-
+    // Dès qu'un jeu de question est sélectionné on récupère une question aléatoire et redirige vers le composable des questions
     LaunchedEffect(selectedSetId) {
         selectedSetId?.let { setId ->
             gameViewModel.getRandomQuestionFromSet(setId).collect { randomQuestion ->

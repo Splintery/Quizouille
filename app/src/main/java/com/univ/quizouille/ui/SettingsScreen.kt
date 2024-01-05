@@ -54,6 +54,11 @@ fun SettingsTextField(value: String, label: String, onDone: (String) -> Unit) {
     )
 }
 
+/**
+ * Composable affichant le menu général des paramètres.
+ * Il permet d'activer/désactiver les notifications, le temps de réponse aux questions ainsi que la taille des épolices
+ * @param permissionLauncher    Launcher permettant au Viewmodel de vérifier et demander la permission des notifications
+ */
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
@@ -89,6 +94,7 @@ fun SettingsScreen(
         }
         TitleWithContentRow(title = "Taille de la police", fontSize = policeSize) {
             // TODO mettre un minimun et un maximum
+            // TODO Launched effect
             SettingsTextField(
                 value = policeSize.toString(),
                 label = "",
@@ -97,6 +103,10 @@ fun SettingsScreen(
     }
 }
 
+/**
+ * Composable s'affichant lorsque l'utilisateur active les notifications.
+ * Il permet de configurer la fréquence et l'unité de temps à la quelle les notifications vont arriver
+ */
 @Composable
 fun NotificationSettingsSection(settingsViewModel: SettingsViewModel) {
     val notificationsFrequency by settingsViewModel.notificationsFreqFlow.collectAsState(initial = 1)

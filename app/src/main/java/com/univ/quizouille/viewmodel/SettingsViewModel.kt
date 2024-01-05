@@ -72,7 +72,6 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.NOTIFICATIONS] = true
         }
-        Log.d("notif", "worker activé !")
         rescheduleNotificationWorker()
     }
 
@@ -80,7 +79,7 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.NOTIFICATIONS] = false
         }
-        Log.d("notif", "stoppé...")
+        // Pour désactiver les notifications on supprime le Worker en cours
         WorkManager.getInstance(getApplication()).cancelUniqueWork("notification_work")
     }
 
@@ -111,6 +110,10 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * Modifie l'unité de fréquence des notifications
+     * @param stringUnit    L'unité de fréquence: [heures, minutes, secondes]
+     */
     fun setFrequencyTimeUnit(stringUnit: String) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
@@ -120,6 +123,9 @@ class SettingsViewModel (application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * Reprogramme le Worker des notifications avec les valeurs du Datastore
+     */
     private suspend fun rescheduleNotificationWorker() {
         val frequency = notificationsFreqFlow.first().toLong()
         val unit = frequencyUnits[frequencyUnitFlow.first()] ?: TimeUnit.HOURS

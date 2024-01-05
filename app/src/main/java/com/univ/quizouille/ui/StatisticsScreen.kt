@@ -30,6 +30,9 @@ import com.univ.quizouille.viewmodel.SettingsViewModel
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+/**
+ * Composable affichant des Cards pour chaque jeu de question, et une pour tous les jeux de questions
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, navController: NavHostController) {
@@ -60,6 +63,7 @@ fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsVi
         }
     }
 
+    // Les LaunchedEffect détectent la séléction d'un jeu de question ou de tous les jeux de questions
     LaunchedEffect(selectedSetId) {
         selectedSetId?.let { setId ->
             navigateToRouteNoPopUp(route = "statistics/$setId", navController = navController)
@@ -73,7 +77,17 @@ fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsVi
     }
 }
 
+@Composable
+fun ShowStatisticsData(name: String, policeTitleSize: Int, policeSize: Int, correctCount: Int, totalAsked: Int) {
+    TitleWithContentRow(title = "Statistiques: $name", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
+    TitleWithContentRow(title = "Bonnes réponses: $correctCount", fontSize = policeSize)
+    TitleWithContentRow(title = "Total répondu: $totalAsked", fontSize = policeSize)
+}
 
+/**
+ * Composable qui affiche les statistiques d'un jeu de questions
+ * @param setId Le jeu de question dont on affiche les statistiques
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ShowStatisticsScreen(setId: Int, gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel) {
@@ -98,9 +112,14 @@ fun ShowStatisticsScreen(setId: Int, gameViewModel: GameViewModel, settingsViewM
     ) {
         questionSetStatistics?.let { stats ->
             val setName = questionSet?.name
-            TitleWithContentRow(title = "Statistiques: $setName", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
-            TitleWithContentRow(title = "Bonnes réponses: ${stats.correctCount}", fontSize = policeSize)
-            TitleWithContentRow(title = "Total répondu: ${stats.totalAsked}", fontSize = policeSize)
+            if (setName != null) {
+                ShowStatisticsData(name = setName,
+                    policeTitleSize = policeTitleSize,
+                    policeSize = policeSize,
+                    correctCount = stats.correctCount,
+                    totalAsked = stats.totalAsked
+                )
+            }
             if (stats.lastTrainedDate.isNotEmpty()) {
                 val daysSinceLastShown = ChronoUnit.DAYS.between(stringToLocalDate(stats.lastTrainedDate), currentDate)
                 TitleWithContentRow(title = "Jours depuis le dernier entrainement: $daysSinceLastShown", fontSize = policeSize)
@@ -111,7 +130,9 @@ fun ShowStatisticsScreen(setId: Int, gameViewModel: GameViewModel, settingsViewM
     }
 }
 
-
+/**
+ * Composable qui affiche les statistiques de l'ensemble des jeux
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ShowAllStatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel) {
@@ -133,9 +154,13 @@ fun ShowAllStatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: Set
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TitleWithContentRow(title = "Statistiques: Tous les jeux", fontSize = policeTitleSize, fontWeight = FontWeight.Bold)
-        TitleWithContentRow(title = "Bonnes réponses: $totalCorrectCount", fontSize = policeSize)
-        TitleWithContentRow(title = "Total répondu: $totalAskedCount", fontSize = policeSize)
+        ShowStatisticsData(
+            name = "Tous les jeux",
+            policeTitleSize = policeTitleSize,
+            policeSize = policeSize,
+            correctCount = totalCorrectCount,
+            totalAsked =totalAskedCount
+        )
         if (daysSinceTraining >= 0)
             TitleWithContentRow(title = "Jours depuis le dernier entrainement: $daysSinceTraining", fontSize = policeSize)
         else

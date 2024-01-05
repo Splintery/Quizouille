@@ -17,6 +17,8 @@ import androidx.compose.material.SnackbarHost
 import androidx.compose.material.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -40,15 +42,21 @@ import com.univ.quizouille.viewmodel.SettingsViewModel
 
 
 class MainActivity : ComponentActivity() {
-    private lateinit var notificationManager: AppNotificationManager
+    // Initialisation du NotificationManager
+    private val notificationManager: AppNotificationManager by lazy {
+        AppNotificationManager(this).apply {
+            createChannel()
+        }
+    }
 
+    // private lateinit var notificationManager: AppNotificationManager
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // initialisation du notification manager
-        notificationManager = AppNotificationManager(this)
-        notificationManager.createChannel()
+        // initialisation du NotificationManager
+        // notificationManager = AppNotificationManager(this)
+        // notificationManager.createChannel()
 
         setContent {
             Main(notificationManager = notificationManager)
@@ -67,14 +75,16 @@ fun Main(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        Log.d("permissions", if(it) "granted" else "denied")
+        Log.d("Permissions", if (it) "granted" else "denied")
     }
 
     Scaffold(snackbarHost = { SnackbarHost (snackbarHostState) },
         bottomBar = {
             val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+            // La BottomBar n'est pas affichée pendant un entraînement
             if (currentRoute != "question/{questionId}") {
-                BottomBar(navController = navController) }
+                BottomBar(navController = navController)
+            }
         }) { paddingValues ->
         NavHost(navController = navController, startDestination = "game", modifier = Modifier.padding(paddingValues)) {
             composable("game") {
@@ -99,7 +109,7 @@ fun Main(
             }
             composable("gameEnded") {
                 gameViewModel.resetSnackbarMessage()
-                GameEnded(settingsViewModel = settingsViewModel, navController = navController)
+                GameEnded(settingsViewModel = settingsViewModel)
             }
             composable("statistics") {
                 gameViewModel.resetSnackbarMessage()
@@ -154,13 +164,13 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
         icon = { Icon(Icons.Outlined.Edit, contentDescription = "Edit menu")}
     )
     BottomNavigationItem(
-        selected = currentRoute == settingsRoute,
+        selected = currentRoute == downloadSetsRoute,
         onClick = {
-            if (currentRoute != settingsRoute) {
-                navigateToRoute(route = settingsRoute, navController = navController)
+            if (currentRoute != downloadSetsRoute) {
+                navigateToRoute(route = downloadSetsRoute, navController = navController)
             }
         },
-        icon = { Icon(Icons.Outlined.Settings, contentDescription = "Settings menu")}
+        icon = { Icon(Icons.Outlined.AddCircle, contentDescription = "Download sets menu")}
     )
     BottomNavigationItem(
         selected = currentRoute == statisticsRoute,
@@ -172,12 +182,12 @@ fun BottomBar(navController: NavHostController) = BottomNavigation {
         icon = { Icon(Icons.Outlined.List, contentDescription = "Statistics menu")}
     )
     BottomNavigationItem(
-        selected = currentRoute == downloadSetsRoute,
+        selected = currentRoute == settingsRoute,
         onClick = {
-            if (currentRoute != downloadSetsRoute) {
-                navigateToRoute(route = downloadSetsRoute, navController = navController)
+            if (currentRoute != settingsRoute) {
+                navigateToRoute(route = settingsRoute, navController = navController)
             }
         },
-        icon = { Icon(Icons.Outlined.List, contentDescription = "Download sets menu")}
+        icon = { Icon(Icons.Outlined.Settings, contentDescription = "Settings menu")}
     )
 }

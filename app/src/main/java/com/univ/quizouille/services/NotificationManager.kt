@@ -18,6 +18,9 @@ import com.univ.quizouille.ui.MainActivity
 const val CHANNEL_ID = "MY_CHANNEL_ID"
 
 class AppNotificationManager(private val context: Context) {
+    /**
+     * Crée le channel unique de notifications
+     */
     fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "private_channel"
@@ -30,6 +33,9 @@ class AppNotificationManager(private val context: Context) {
         }
     }
 
+    /**
+     * Lance la notification du rappel d'entraînement à l'utilisateur
+     */
     fun createNotification() {
         val intent1 = Intent(context, MainActivity::class.java)
         val pending1 = PendingIntent.getActivity(context, 1, intent1, PendingIntent.FLAG_IMMUTABLE)
@@ -43,6 +49,10 @@ class AppNotificationManager(private val context: Context) {
         notificationManager.notify(1, notification)
     }
 
+    /**
+     * Vérifie que l'utilisateur a les permissions nécessaires afin de reçevoir des notifications
+     * @return  true si l'utilisateur dispose des permissions, false sinon
+     */
     fun hasNotificationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -52,6 +62,9 @@ class AppNotificationManager(private val context: Context) {
         }
     }
 
+    /**
+     * Demande à l'utilisateur d'accepter l'envoi de permissions
+     */
     fun requestNotificationPermission(permissionLauncher: ActivityResultLauncher<String>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

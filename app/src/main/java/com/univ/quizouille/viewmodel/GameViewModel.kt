@@ -43,12 +43,13 @@ import java.lang.IllegalArgumentException
 class GameViewModel(private var application: Application) : AndroidViewModel(application) {
     private val dao = (application as AppApplication).database.appDao()
 
-    var downloadManager: AppDownloadManager
+    private var downloadManager: AppDownloadManager
     private var broadcastReceiver: AppBroadcastReceiver
     private val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
 
     init {
-        downloadManager = AppDownloadManager(application, (application as AppApplication).database.appDao())
+        // Initialisation du DownloadManager et BroadcastReceiver
+        downloadManager = AppDownloadManager(application)
         broadcastReceiver = AppBroadcastReceiver(gameViewModel = this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             application.registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
@@ -57,6 +58,8 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
     }
 
     var snackBarMessage by mutableStateOf("")
+
+    // Flow du jeu
     var questionSetsFlow = dao.getAllQuestionSets()
     var questionFlow = dao.getQuestionById(0)
     var answersFlow = dao.getAllAnswerForQuestion(0)
@@ -72,6 +75,13 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
     var lastSetInsertedIdFlow = dao.getLatestSetId()
     var lastQuestionInsertedIdFlow = dao.getLatestQuestionId()
 
+    /**
+     * Fonction vérifiant si la question devrait être affichée.
+     * Si le nombre de jours sans avoir été joué est supérieur au status de la question, on l'affiche
+     * @param question      La question à vérifier
+     * @param currentDate   La data courante
+     * @return              Si la question doit être affichée
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun shouldShowQuestion(question: Question, currentDate: LocalDate) : Boolean {
         if (question.lastShownDate == "")
@@ -80,6 +90,12 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         return daysSinceLastShown >= question.status
     }
 
+    /**
+     * Retourne le Flow des questions modifié en gardant seulement celles que l'on doit afficher
+     * @param setId Le jeu de questions
+     * @return      Le Flow modifié
+     * @see         shouldShowQuestion
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun getFilteredQuestionsForSet(setId: Int): Flow<List<Question>> {
         val currentDate = LocalDate.now()
@@ -90,6 +106,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Retourne le Flow de tous les jeux de questions que l'on peut afficher en ce jour
+     * @return  Le Flow des jeux de questions
+     * @see     getFilteredQuestionsForSet
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun getQuestionSetsForToday(): Flow<List<QuestionSet>> = questionSetsFlow.map{ questionSets ->
         questionSets.filter { set ->
@@ -101,6 +122,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Retourne une question aléatoire affichable d'un jeu de questions
+     * @param setId     L'Id du jeu de question
+     * @return          Le Flow d'une question
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun getRandomQuestionFromSet(setId: Int): Flow<Question?> {
         return getFilteredQuestionsForSet(setId).map { questions ->
@@ -111,19 +137,34 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Met à jour le Flow d'un question ainsi que ses réponses
+     * @param questionId L'ID de la question
+     */
     fun fetchQuestionById(questionId: Int) {
         questionFlow = dao.getQuestionById(questionId = questionId)
         answersFlow = dao.getAllAnswerForQuestion(questionId = questionId)
     }
 
+    /**
+     * Met à jour le Flow des statistiques d'un jeu de questions
+     * @param setId L'ID du jeu de questions
+     */
     fun fetchSetStatisticsById(setId: Int) {
         setStatisticsFlow = dao.getSetStatisticsById(setId = setId)
     }
 
+    /**
+     * Met à jour le Flow d'un jeu de questions
+     * @param setId L'ID du jeu de questions
+     */
     fun fetchQuestionSet(setId: Int) {
         questionSetFlow = dao.getQuestionSetById(setId = setId)
     }
 
+    /**
+     * Met à jour le Flow des statistiques de tous les jeux de questions
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchAllSetsStatistics() {
         viewModelScope.launch {
@@ -131,6 +172,7 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
                 totalCorrectCount = statisticsList.sumOf { it.correctCount }
                 totalAskedCount = statisticsList.sumOf { it.totalAsked }
 
+                // on cherche la data la plus proche de la date courante
                 var minDaysDiff: Long = Long.MAX_VALUE
                 val currentDate = LocalDate.now()
                 for (stats in statisticsList) {
@@ -145,6 +187,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
             }
         }
     }
+
+    /**
+     * Insère un jeu de questions
+     * @param setName   Nom du jeu de questions
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun insertQuestionSet(setName: String) {
         viewModelScope.launch {
@@ -158,6 +205,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Insère une question
+     * @param setId     ID du jeu de questions
+     * @param question  La contenu de la question
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun insertQuestion(setId: Int, question: String) {
         viewModelScope.launch {
@@ -171,6 +223,13 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
             }
         }
     }
+
+    /**
+     * Insère la réponse d'une question d'un jeu de questions
+     * @param questionId    L'ID de la question
+     * @param answer        La réponse à la question
+     * @param correct       Si la réponse est correcte (QCM)
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun insertAnswer(questionId: Int, answer: String, correct: Boolean) {
         viewModelScope.launch {
@@ -182,6 +241,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Met à jour la BD lorsqu'une question a bien été répondue.
+     * La date de réponse est mise à la date courante, le status et statistiques sont mis à jour
+     * @param question La question à mettre à jour
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun successQuestion(question: Question) {
         viewModelScope.launch {
@@ -198,6 +262,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Met à jour la BD lorsqu'une question a mal été répondue.
+     * La date de réponse est mise à la date courante, le status et statistiques mis à jour
+     * @param question La question à mettre à jour
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     fun failQuestion(question: Question) {
         viewModelScope.launch {
@@ -213,6 +282,11 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Lance la demande de téléchargment de l'URL au DownloadManager
+     * @param url   La fichier `JSON` à télécharger
+     * @return      L'ID du téléchargement
+     */
     fun downloadData(url: String): Long {
         if(url.isEmpty()) {
             snackBarMessage = "Le lien ne doit pas être vide"
@@ -231,6 +305,9 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         application.unregisterReceiver(broadcastReceiver)
     }
 
+    /**
+     * Parse le fichier téléchargé par le DownloadManager et le supprime
+     */
     fun parseFile() {
         val file = File(application.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "data.json")
         try {
@@ -259,6 +336,9 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
     /**
      * Notre parsing de fichier JSON est basée sur l'API suivante:
      *            https://opentdb.com/api_config.php
+     *
+     * Parse la ligne par le parser de fichier, et insère les éléments dans la base de données.
+     * Si le fichier contient une seule catégorie, le jeu de questions sera nommé selon le nom de la catégorie
      */
     private fun parseJsonFile(line: String) = viewModelScope.launch {
         val jsonObject = JSONObject(line)

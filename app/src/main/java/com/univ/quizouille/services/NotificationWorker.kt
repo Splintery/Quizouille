@@ -44,9 +44,13 @@ class NotificationWorker(context: Context, workerParameters: WorkerParameters) :
     }
 
     companion object {
-        // À chaque appel lors de l'activation ou d'un changement de paramètres,
-        // l'ancien Worker est remplacé par le nouveau avec les valeurs correctes
-        fun scheduleNextWork(context: Context, timeUnit: TimeUnit,delay: Long) {
+        /**
+         * Programme le prochain envoi de notifications.
+         * À chaque appel lors de l'activation ou d'un changement de paramètres, l'ancien Worker est remplacé par le nouveau avec les valeurs correctes
+         * @param timeUnit  Unité de fréquence des notifications [HOUR, MINUTES, SECONDS]
+         * @param delay     Le délai entre chaque notification
+         */
+        fun scheduleNextWork(context: Context, timeUnit: TimeUnit, delay: Long) {
             val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
                 .setInitialDelay(delay, timeUnit)
                 .build()
@@ -55,7 +59,6 @@ class NotificationWorker(context: Context, workerParameters: WorkerParameters) :
                 ExistingWorkPolicy.REPLACE,
                 workRequest
             )
-            Log.d("notif", "c'est parti! $delay : $timeUnit")
         }
     }
 }

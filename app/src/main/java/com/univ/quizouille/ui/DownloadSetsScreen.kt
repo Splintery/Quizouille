@@ -60,6 +60,7 @@ fun DownloadSetsScreen(
         }
     }
 
+    // Détecte le changement de valeur de `gameViewModel.snackBarMessage` et lance un SnackBar si non vide
     LaunchedEffect(gameViewModel.snackBarMessage) {
         if (gameViewModel.snackBarMessage.isNotEmpty()) {
             snackbarHostState.showSnackbar(gameViewModel.snackBarMessage, duration = SnackbarDuration.Short)
