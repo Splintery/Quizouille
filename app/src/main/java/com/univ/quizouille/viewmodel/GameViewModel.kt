@@ -62,7 +62,15 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             application.registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
         }
-        insertSampleData()
+        viewModelScope.launch {
+            try {
+                if (dao.getAllQuestionSets().first().isEmpty()) {
+                    insertSampleData()
+                }
+            } catch (e: Exception) {
+                snackBarMessage = "Error with SampleData insertion at gameViewModel Init"
+            }
+        }
     }
 
     var snackBarMessage by mutableStateOf("")
@@ -268,8 +276,7 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
     fun insertQuestion(setId: Int, question: String) {
         viewModelScope.launch {
             try {
-                val currentDate = LocalDate.now().toString()
-                var questionId: Int = dao.insertQuestion(Question(questionSetId = setId, content = question, lastShownDate = currentDate)).toInt()
+                var questionId: Int = dao.insertQuestion(Question(questionSetId = setId, content = question, lastShownDate = "")).toInt()
                 allQuestionsFlow = dao.getAllQuestions()
                 lastQuestionInsertedIdFlow = flowOf(questionId)
             }
