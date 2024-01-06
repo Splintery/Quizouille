@@ -1,17 +1,11 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 
 package com.univ.quizouille.ui
 
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.os.Build
-import android.os.Environment
 import android.util.Log
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,21 +30,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.univ.quizouille.model.Answer
 import com.univ.quizouille.model.Question
@@ -59,7 +48,6 @@ import com.univ.quizouille.utilities.navigateToRoute
 import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 import kotlinx.coroutines.delay
-import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Question, gameViewModel: GameViewModel): Boolean {
@@ -71,7 +59,6 @@ fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Q
         false
     }
 }
-
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleMultipleAnswerValidation(answersSelectedId: List<Int>, answers: List<Answer>, question: Question, gameViewModel: GameViewModel): Boolean {
     var res = true
@@ -89,21 +76,11 @@ fun handleMultipleAnswerValidation(answersSelectedId: List<Int>, answers: List<A
     }
 }
 
-/**
- * Si le temps est écoulé, la question est considérée comme échouée
- * @param question      La question à mettre à jour
- * @param gameViewModel Le viewModel dans lequel se trouve le DAO
- */
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleTimeout(question: Question, gameViewModel: GameViewModel) {
     gameViewModel.failQuestion(question)
 }
 
-/**
- * Si l'utilisateur révèle la réponse, la question est considerée comme échouée
- * @param question      La question à mettre à jour
- * @param gameViewModel Le viewModel dans lequel se trouve le DAO
- */
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleReveal(question: Question, gameViewModel: GameViewModel) {
     gameViewModel.failQuestion(question)
@@ -122,6 +99,19 @@ fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit)
 fun getFontWeight(answersSelectedId: List<Int>, id: Int): FontWeight {
     return if (answersSelectedId.contains(id)) FontWeight.Bold else FontWeight.Normal
 }
+fun getFontColor(answersSelectedId: List<Int>, id: Int, revealAnswer: Boolean, showNextButton: Boolean, answerCorrect: Boolean): Color {
+    return if (answersSelectedId.contains(id)) {
+        if (revealAnswer || (showNextButton && answerCorrect)) {
+            Color.Green
+        } else if (showNextButton && !answerCorrect) {
+            Color.Red
+        } else {
+            Color.Blue
+        }
+    } else {
+        Color.Black
+    }
+}
 fun getElevation(answersSelectedId: List<Int>, id: Int): Int {
     return if (answersSelectedId.contains(id)) 10 else 0
 }
@@ -135,7 +125,7 @@ fun QuestionScreen(
     settingsViewModel: SettingsViewModel,
     snackbarHostState: SnackbarHostState
 ) {
-    // on met à jour le flow du Viewmodel avec la question courante
+    // on met à jour la question actuelle via une coroutine
     LaunchedEffect(questionId) {
         gameViewModel.fetchQuestionById(questionId = questionId)
     }
@@ -155,6 +145,29 @@ fun QuestionScreen(
     var successQuestion by remember { mutableStateOf(false) }
     var failQuestion by remember { mutableStateOf(false) }
     var revealQuestion by remember { mutableStateOf(false) }
+
+    @Composable
+    fun getAnswerText(index: Int) {
+        Text(
+            text = answers[index].answer,
+            fontSize = policeSize.sp,
+            fontWeight = getFontWeight(answersSelectedId, answers[index].answerId),
+            color = getFontColor(answersSelectedId, answers[index].answerId, revealQuestion, showNextButton, answers[index].correct),
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .clickable {
+                    answer = answers[index].answer
+                    if (answersSelectedId.contains(answers[index].answerId)) {
+                        answersSelectedId.remove(answers[index].answerId)
+                    } else {
+                        answersSelectedId.add(answers[index].answerId)
+                    }
+                }
+                .padding(horizontal = 5.dp)
+                .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(30))
+                .padding(vertical = 10.dp, horizontal = 15.dp)
+        )
+    }
 
     // Le timer continue tant qu'une réponse n'a pas été donnée
     LaunchedEffect(questionId, showNextButton) {
@@ -196,36 +209,15 @@ fun QuestionScreen(
                         .padding(vertical = 8.dp),
                     enabled = !showNextButton
                 )
-            }
-            else {
+            } else {
+
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
                     Row(modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(vertical = 5.dp)) {
                         for (index in answers.indices) {
                             if (index % 2 == 0) {
-                                Text(
-                                    text = answers[index].answer,
-                                    fontSize = policeSize.sp,
-                                    fontWeight = getFontWeight(answersSelectedId, answers[index].answerId),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .clickable {
-                                            answer = answers[index].answer
-                                            if (answersSelectedId.contains(answers[index].answerId)) {
-                                                answersSelectedId.remove(answers[index].answerId)
-                                            } else {
-                                                answersSelectedId.add(answers[index].answerId)
-                                            }
-                                        }
-                                        .padding(horizontal = 5.dp)
-                                        .border(
-                                            width = 1.dp,
-                                            color = Color.DarkGray,
-                                            shape = RoundedCornerShape(30)
-                                        )
-                                        .padding(vertical = 10.dp, horizontal = 15.dp)
-                                )
+                                getAnswerText(index = index)
                             }
                         }
                     }
@@ -234,28 +226,7 @@ fun QuestionScreen(
                         .padding(vertical = 5.dp)) {
                         for (index in 0..<answers.size) {
                             if (index % 2 == 1) {
-                                Text(
-                                    text = answers[index].answer,
-                                    fontSize = policeSize.sp,
-                                    fontWeight = getFontWeight(answersSelectedId, answers[index].answerId),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .clickable {
-                                            answer = answers[index].answer
-                                            if (answersSelectedId.contains(answers[index].answerId)) {
-                                                answersSelectedId.remove(answers[index].answerId)
-                                            } else {
-                                                answersSelectedId.add(answers[index].answerId)
-                                            }
-                                        }
-                                        .padding(horizontal = 5.dp)
-                                        .border(
-                                            width = 1.dp,
-                                            color = Color.DarkGray,
-                                            shape = RoundedCornerShape(30)
-                                        )
-                                        .padding(vertical = 10.dp, horizontal = 15.dp)
-                                )
+                                getAnswerText(index = index)
                             }
                         }
                     }
@@ -328,11 +299,6 @@ fun QuestionScreen(
 }
 
 
-/**
- * Récupère une question aléatoire du Viewmodel et change de composable.
- * S'il ne reste aucune question possibles dans le jeu de questions, affiche un composable spécifique
- * @param setId Id sur jeu de question dans lequel chercher
- */
 @RequiresApi(Build.VERSION_CODES.O)
 private suspend fun handleNextQuestionNavigation(setId: Int, gameViewModel: GameViewModel, navController: NavHostController) {
     gameViewModel.getRandomQuestionFromSet(setId).collect { randomQuestion ->
@@ -377,11 +343,8 @@ fun ECard(
     }
 }
 
-/**
- * Composable indiquant qu'il ne reste aucun question à effectuer aujourd'hui
- */
 @Composable
-fun GameEnded(settingsViewModel: SettingsViewModel) {
+fun GameEnded(settingsViewModel: SettingsViewModel, navController: NavHostController) {
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
 
@@ -391,13 +354,13 @@ fun GameEnded(settingsViewModel: SettingsViewModel) {
     }
 }
 
-/**
- * Composable affichant l'ensemble des jeux de questions possible ce jour.
- * Cliquer sur un jeu de question lancera l'entraînement sur une question aléatoire
- */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun GameScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, navController: NavHostController) {
+fun GameScreen(
+    gameViewModel: GameViewModel,
+    settingsViewModel: SettingsViewModel,
+    navController: NavHostController
+) {
     val questionsSet by gameViewModel.getQuestionSetsForToday().collectAsState(listOf())
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
@@ -419,7 +382,7 @@ fun GameScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewMode
         }
     }
 
-    // Dès qu'un jeu de question est sélectionné on récupère une question aléatoire et redirige vers le composable des questions
+
     LaunchedEffect(selectedSetId) {
         selectedSetId?.let { setId ->
             gameViewModel.getRandomQuestionFromSet(setId).collect { randomQuestion ->

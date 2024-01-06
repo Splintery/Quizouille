@@ -1,6 +1,7 @@
 package com.univ.quizouille.database
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
@@ -29,11 +30,11 @@ interface AppDao {
 
     @Query("SELECT * FROM question_sets")
     fun getAllQuestionSets(): Flow<List<QuestionSet>>
+    @Query("SELECT * FROM questions")
+    fun getAllQuestions(): Flow<List<Question>>
 
-    @Query("SELECT MAX(setId) FROM question_sets")
-    fun getLatestSetId(): Flow<Int>
-    @Query("SELECT name FROM question_sets")
-    fun getAllQuestionSetNames(): Flow<List<String>>
+//    @Query("SELECT name FROM question_sets")
+//    fun getAllQuestionSetNames(): Flow<List<String>>
 
     @Query("SELECT * FROM questions WHERE questionSetId = :setId")
     fun getQuestionsForSet(setId: Int): Flow<List<Question>>
@@ -43,6 +44,8 @@ interface AppDao {
 
     @Query("SELECT MAX(questionId) FROM questions")
     fun getLatestQuestionId(): Flow<Int>
+    @Query("SELECT MAX(setId) FROM question_sets")
+    fun getLatestQuestionSetId(): Flow<Int>
 
     @Query("SELECT * FROM question_set_statistics WHERE questionSetId= :setId")
     fun getSetStatisticsById(setId: Int): Flow<QuestionSetStatistics>
@@ -64,4 +67,10 @@ interface AppDao {
 
     @Update
     suspend fun updateQuestionSet(questionSet: QuestionSet)
+
+    @Delete
+    suspend fun deleteQuestion(question: Question)
+
+    @Delete
+    suspend fun deleteQuestionSet(questionSet: QuestionSet)
 }
