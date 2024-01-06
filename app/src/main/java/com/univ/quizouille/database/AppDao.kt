@@ -28,13 +28,15 @@ interface AppDao {
     @Query("SELECT * FROM answers WHERE questionId = :questionId")
     fun getAllAnswerForQuestion(questionId: Int): Flow<List<Answer>>
 
+    @Query("SELECT * FROM answers WHERE answerId = :answerId")
+    fun getAnswerById(answerId: Int): Flow<Answer>
+
     @Query("SELECT * FROM question_sets")
     fun getAllQuestionSets(): Flow<List<QuestionSet>>
     @Query("SELECT * FROM questions")
     fun getAllQuestions(): Flow<List<Question>>
-
-//    @Query("SELECT name FROM question_sets")
-//    fun getAllQuestionSetNames(): Flow<List<String>>
+    @Query("SELECT * FROM answers")
+    fun getAllAnswers(): Flow<List<Answer>>
 
     @Query("SELECT * FROM questions WHERE questionSetId = :setId")
     fun getQuestionsForSet(setId: Int): Flow<List<Question>>
@@ -61,6 +63,8 @@ interface AppDao {
 
     @Update
     suspend fun updateQuestion(question: Question)
+    @Update
+    suspend fun updateAnswer(answer: Answer)
 
     @Update
     suspend fun updateQuestionSetStats(questionSetStatistics: QuestionSetStatistics)

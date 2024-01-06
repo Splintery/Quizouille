@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -96,24 +97,26 @@ fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit)
     }
 }
 
-fun getFontWeight(answersSelectedId: List<Int>, id: Int): FontWeight {
-    return if (answersSelectedId.contains(id)) FontWeight.Bold else FontWeight.Normal
-}
-fun getFontColor(answersSelectedId: List<Int>, id: Int, revealAnswer: Boolean, showNextButton: Boolean, answerCorrect: Boolean): Color {
+
+fun getBorderWidth(answersSelectedId: List<Int>, id: Int): Dp {
     return if (answersSelectedId.contains(id)) {
+        3.dp
+    } else {
+        1.dp
+    }
+}
+fun getBorderColor(answersSelectedId: Int, id: Int, revealAnswer: Boolean, showNextButton: Boolean, answerCorrect: Boolean): Color {
+    return if (answersSelectedId == id) {
         if (revealAnswer || (showNextButton && answerCorrect)) {
             Color.Green
         } else if (showNextButton && !answerCorrect) {
             Color.Red
         } else {
-            Color.Blue
+            Color.Black
         }
     } else {
-        Color.Black
+        Color.Gray
     }
-}
-fun getElevation(answersSelectedId: List<Int>, id: Int): Int {
-    return if (answersSelectedId.contains(id)) 10 else 0
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -148,23 +151,39 @@ fun QuestionScreen(
 
     @Composable
     fun getAnswerText(index: Int) {
+        var currentAnswerSelected by remember {
+            mutableStateOf(-1)
+        }
+        if (answersSelectedId.contains(answers[index].answerId)) {
+            currentAnswerSelected = answers[index].answerId
+        }
         Text(
             text = answers[index].answer,
             fontSize = policeSize.sp,
-            fontWeight = getFontWeight(answersSelectedId, answers[index].answerId),
-            color = getFontColor(answersSelectedId, answers[index].answerId, revealQuestion, showNextButton, answers[index].correct),
+            fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .clickable {
                     answer = answers[index].answer
-                    if (answersSelectedId.contains(answers[index].answerId)) {
-                        answersSelectedId.remove(answers[index].answerId)
-                    } else {
+                    if (currentAnswerSelected == -1) {
+                        currentAnswerSelected = answers[index].answerId
                         answersSelectedId.add(answers[index].answerId)
+                    } else {
+                        currentAnswerSelected = -1
+                        answersSelectedId.remove(answers[index].answerId)
                     }
                 }
-                .padding(horizontal = 5.dp)
-                .border(width = 1.dp, color = Color.DarkGray, shape = RoundedCornerShape(30))
+                .border(
+                    width = getBorderWidth(currentAnswerSelected, answers[index].answerId),
+                    color = getBorderColor(
+                        currentAnswerSelected,
+                        answers[index].answerId,
+                        revealQuestion,
+                        showNextButton,
+                        answers[index].correct
+                    ),
+                    shape = RoundedCornerShape(10)
+                )
                 .padding(vertical = 10.dp, horizontal = 15.dp)
         )
     }
@@ -214,7 +233,9 @@ fun QuestionScreen(
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
                     Row(modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .padding(vertical = 5.dp)) {
+                        .padding(vertical = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
                         for (index in answers.indices) {
                             if (index % 2 == 0) {
                                 getAnswerText(index = index)
@@ -223,14 +244,15 @@ fun QuestionScreen(
                     }
                     Row(modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .padding(vertical = 5.dp)) {
+                        .padding(vertical = 5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
                         for (index in 0..<answers.size) {
                             if (index % 2 == 1) {
                                 getAnswerText(index = index)
                             }
                         }
                     }
-
                 }
 
             }

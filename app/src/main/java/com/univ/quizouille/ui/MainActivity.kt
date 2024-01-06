@@ -114,7 +114,7 @@ fun Main(
             composable("gameEnded") {
                 gameViewModel.resetSnackbarMessage()
                 settingsViewModel.resetSnackbarMessage()
-                GameEnded(settingsViewModel = settingsViewModel)
+                GameEnded(settingsViewModel = settingsViewModel, navController = navController)
             }
             composable("statistics") {
                 gameViewModel.resetSnackbarMessage()

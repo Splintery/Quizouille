@@ -26,13 +26,14 @@ import androidx.compose.material.Switch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,8 +46,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.univ.quizouille.model.Answer
 import com.univ.quizouille.model.Question
 import com.univ.quizouille.model.QuestionSet
 import com.univ.quizouille.viewmodel.GameViewModel
@@ -58,6 +61,21 @@ fun getFontWeight(setId: Int, itemId: Int): FontWeight {
         return FontWeight.Bold
     } else {
         return FontWeight.Normal
+    }
+}
+
+fun getBorderColor(idSelected: Int, itemId: Int): Color {
+    if (idSelected == itemId) {
+        return Color.Black
+    } else {
+        return Color.Gray
+    }
+}
+fun getBorderWidth(idSelected: Int, itemId: Int): Dp {
+    if (idSelected == itemId) {
+        return 3.dp
+    } else {
+        return 1.dp
     }
 }
 fun areAnswersValid(answer: List<String>, answerCorrect: List<Boolean>): Boolean {
@@ -95,8 +113,9 @@ fun EditScreen(
 
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
-    val allQuestionSets: List<QuestionSet> by gameViewModel.questionSetsFlow.collectAsState(initial = mutableListOf())
+    val allQuestionSets: List<QuestionSet> by gameViewModel.allQuestionSetsFlow.collectAsState(initial = mutableListOf())
     val allQuestions: List<Question> by gameViewModel.allQuestionsFlow.collectAsState(initial = mutableListOf())
+    val allAnswers: List<Answer> by gameViewModel.allAnswersFlow.collectAsState(initial = mutableListOf())
 
     @Composable
     fun addNewQuestionScreen() {
@@ -111,8 +130,11 @@ fun EditScreen(
                 horizontalArrangement = Arrangement.Start,
                 modifier = Modifier.padding(vertical = 25.dp)
             ) {
-                Button(onClick = {addNewQuestion = false}) {
-                    Text(text = "return", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                Button(onClick = {
+                    addNewQuestion = false
+                    setId = -1
+                }) {
+                    Text(text = "Retour", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Row(
@@ -131,7 +153,7 @@ fun EditScreen(
                             value = newSetName,
                             onValueChange = { newSetName = it },
                             label = {
-                                Text(text = "new set")
+                                Text(text = "Nouveau Jeu")
                             }
                         )
                     }
@@ -149,7 +171,7 @@ fun EditScreen(
                                 Text(
                                     text = it.name,
                                     fontSize = policeSize.sp,
-                                    fontWeight = getFontWeight(setId, it.setId),
+                                    fontWeight = FontWeight.Normal,
                                     modifier = Modifier
                                         .clickable {
                                             if (setId != it.setId) {
@@ -159,9 +181,9 @@ fun EditScreen(
                                             }
                                         }
                                         .border(
-                                            width = 1.dp,
-                                            color = Color.Black,
-                                            shape = RoundedCornerShape(50)
+                                            width = getBorderWidth(setId, it.setId),
+                                            color = getBorderColor(setId, it.setId),
+                                            shape = RoundedCornerShape(10)
                                         )
                                         .padding(vertical = 10.dp, horizontal = 15.dp)
                                 )
@@ -200,7 +222,7 @@ fun EditScreen(
                     .padding(vertical = 10.dp)
             ) {
                 Text(
-                    text = "Toggle the switch if the answer is correct",
+                    text = "Switch à activé si réponse correcte",
                     fontSize = policeTitleSize.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -214,9 +236,9 @@ fun EditScreen(
                         onValueChange = { answer[index] = it },
                         label = {
                             if (index > 0) {
-                                Text(text = "answer (Optinal)")
+                                Text(text = "Réponse (Optionel)")
                             } else {
-                                Text(text = "answer")
+                                Text(text = "Réponse")
                             }
                         }
                     )
@@ -277,7 +299,7 @@ fun EditScreen(
                         answerCorrect[0] = true
                     }
                 }) {
-                    Text(text = "insérer", Modifier.padding(1.dp))
+                    Text(text = "Insérer", Modifier.padding(1.dp))
                 }
             }
         }
@@ -294,19 +316,24 @@ fun EditScreen(
                 horizontalArrangement = Arrangement.Start,
                 modifier = Modifier.padding(vertical = 25.dp)
             ) {
-                Button(onClick = { deleteSet = false }) {
-                    Text(text = "return", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                Button(onClick = {
+                    deleteSet = false
+                    setId = -1
+                }) {
+                    Text(text = "Retour", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Row(
-                modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxHeight(0.8f)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .fillMaxHeight(0.8f)
             ) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     items(allQuestionSets) {
                         Text(
                             text = it.name,
                             fontSize = policeSize.sp,
-                            fontWeight = getFontWeight(setId, it.setId),
+                            fontWeight = FontWeight.Normal,
                             modifier = Modifier
                                 .clickable {
                                     if (setId != it.setId) {
@@ -316,9 +343,9 @@ fun EditScreen(
                                     }
                                 }
                                 .border(
-                                    width = 1.dp,
-                                    color = Color.Black,
-                                    shape = RoundedCornerShape(50)
+                                    width = getBorderWidth(setId, it.setId),
+                                    color = getBorderColor(setId, it.setId),
+                                    shape = RoundedCornerShape(10)
                                 )
                                 .padding(vertical = 10.dp, horizontal = 15.dp)
                         )
@@ -337,14 +364,14 @@ fun EditScreen(
                         setId = -1
                     }
                 }) {
-                    Text(text = "delete set", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Supprimer le jeu", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
     @Composable
     fun deleteQuestionScreen() {
-        var questionId = -1
+        var questionId by remember { mutableStateOf(-1) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -356,18 +383,20 @@ fun EditScreen(
                 modifier = Modifier.padding(vertical = 25.dp)
             ) {
                 Button(onClick = { deleteQuestion = false }) {
-                    Text(text = "return", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Retour", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Row(
-                modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxHeight(0.8f)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .fillMaxHeight(0.8f)
             ) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     items(allQuestions) {
                         Text(
                             text = it.content,
                             fontSize = policeSize.sp,
-                            fontWeight = getFontWeight(questionId, it.questionId),
+                            fontWeight = FontWeight.Normal,
                             modifier = Modifier
                                 .clickable {
                                     if (questionId != it.questionId) {
@@ -377,9 +406,9 @@ fun EditScreen(
                                     }
                                 }
                                 .border(
-                                    width = 1.dp,
-                                    color = Color.Black,
-                                    shape = RoundedCornerShape(50)
+                                    width = getBorderWidth(questionId, it.questionId),
+                                    color = getBorderColor(questionId, it.questionId),
+                                    shape = RoundedCornerShape(10)
                                 )
                                 .padding(vertical = 10.dp, horizontal = 15.dp)
                         )
@@ -398,7 +427,218 @@ fun EditScreen(
                         questionId = -1
                     }
                 }) {
-                    Text(text = "delete question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Supprimer la question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+    @Composable
+    fun modifyQuestionScreen() {
+        var questionId by remember { mutableStateOf(-1) }
+        var showAnswers by remember { mutableStateOf(false) }
+
+        var answerId by remember { mutableStateOf(-1) }
+        var questionStatus by remember { mutableStateOf(-1)}
+
+        var newAnswerContent by remember { mutableStateOf("") }
+        var newAnswerCorrect by remember { mutableStateOf(false) }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier
+                    .padding(vertical = 25.dp)
+            ) {
+                Button(onClick = { 
+                    questionId = -1
+                    if (showAnswers) {
+                        showAnswers = false
+                    } else {
+                        modifyQuestion = false
+                    }
+                }) {
+                    Text(text = "Retour", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            if (showAnswers) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxHeight(0.4f)
+                ) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier
+                        .align(alignment = Alignment.CenterVertically)) {
+                        items(allAnswers.filter{ it.questionId == questionId }) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                Text(
+                                    text = it.answer,
+                                    fontSize = policeSize.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    modifier = Modifier
+                                        .clickable {
+                                            if (answerId != it.answerId) {
+                                                newAnswerContent = it.answer
+                                                newAnswerCorrect = it.correct
+                                                answerId = it.answerId
+                                            } else {
+                                                newAnswerContent = ""
+                                                newAnswerCorrect = false
+                                                answerId = -1
+                                            }
+                                        }
+                                        .border(
+                                            width = getBorderWidth(answerId, it.answerId),
+                                            color = getBorderColor(answerId, it.answerId),
+                                            shape = RoundedCornerShape(10)
+                                        )
+                                        .padding(vertical = 10.dp, horizontal = 15.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Column(modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .padding(horizontal = 5.dp)
+                        .align(alignment = Alignment.CenterVertically)) {
+                        OutlinedTextField(
+                            value = question,
+                            onValueChange = { question = it }
+                        )
+                    }
+                    Column(modifier = Modifier
+                        .fillMaxWidth(0.2f)
+                        .align(alignment = Alignment.CenterVertically)) {
+                        Text(
+                            text = questionStatus.toString(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.Gray,
+                                    shape = RoundedCornerShape(10)
+                                )
+                                .padding(10.dp)
+                        )
+                    }
+                    Column(modifier = Modifier.fillMaxWidth(0.7f)) {
+                        Button(modifier = Modifier.align(alignment = Alignment.CenterHorizontally), onClick = {
+                            questionStatus++
+                        }) {
+                            Image(Icons.Outlined.KeyboardArrowUp, contentDescription = "increment status")
+                        }
+                        Button(modifier = Modifier.align(alignment = Alignment.CenterHorizontally), onClick = {
+                            if (questionStatus > 1) { questionStatus-- }
+                        }) {
+                            Image(Icons.Outlined.KeyboardArrowDown, contentDescription = "decrement status")
+                        }
+                    }
+
+                }
+                if (answerId != -1) {
+                    Row(modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth()
+                        .padding(vertical = 25.dp),
+                        horizontalArrangement = Arrangement.Center)
+                    {
+                        Column(modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .padding(horizontal = 5.dp)
+                            .align(alignment = Alignment.CenterVertically)) {
+                            OutlinedTextField(value = newAnswerContent, onValueChange = {newAnswerContent = it})
+                        }
+                        Column(modifier = Modifier
+                            .fillMaxWidth(0.2f)
+                            .padding(horizontal = 5.dp)
+                            .align(alignment = Alignment.CenterVertically)) {
+                            Switch(checked = newAnswerCorrect, onCheckedChange = {newAnswerCorrect = it})
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(onClick = {
+                        if (questionId != -1) {
+                            gameViewModel.updateQuestion(questionId, question, questionStatus)
+                            if (answerId != -1) {
+                                gameViewModel.updateAnswer(answerId, newAnswerContent, newAnswerCorrect)
+                                answerId = -1
+                                newAnswerContent = ""
+                                newAnswerCorrect = false
+                                showAnswers = false
+                            }
+                            questionId = -1
+                            question = ""
+                            questionStatus = -1
+                        }
+                    }) {
+                        Text(text = "Modifier", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxHeight(0.5f)
+                ) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                        items(allQuestions) {
+                            Text(
+                                text = it.content,
+                                fontSize = policeSize.sp,
+                                fontWeight = FontWeight.Normal,
+                                modifier = Modifier
+                                    .clickable {
+                                        if (questionId != it.questionId) {
+                                            questionId = it.questionId
+                                            question = it.content
+                                            questionStatus = it.status
+                                        } else {
+                                            questionId = -1
+                                            question = ""
+                                            questionStatus = -1
+                                        }
+                                    }
+                                    .border(
+                                        width = getBorderWidth(questionId, it.questionId),
+                                        color = getBorderColor(questionId, it.questionId),
+                                        shape = RoundedCornerShape(10)
+                                    )
+                                    .padding(vertical = 10.dp, horizontal = 15.dp)
+                            )
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 25.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(onClick = {
+                        if (questionId != -1) {
+                            showAnswers = true
+                        }
+                    }) {
+                        Text(text = "Afficher les réponses pour la question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -413,7 +653,7 @@ fun EditScreen(
             } else if (deleteQuestion) {
                 deleteQuestionScreen()
             } else {
-
+                modifyQuestionScreen()
             }
         } else {
             Column(
@@ -430,7 +670,7 @@ fun EditScreen(
                 )
                 {
                     Button(onClick = {addNewQuestion = true}) {
-                        Text(text = "Add new question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Ajouter une question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Row(
@@ -440,7 +680,7 @@ fun EditScreen(
                 )
                 {
                     Button(onClick = {deleteSet = true}) {
-                        Text(text = "Delete set", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Supprimer un jeu", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Row(
@@ -450,7 +690,7 @@ fun EditScreen(
                 )
                 {
                     Button(onClick = {deleteQuestion = true}) {
-                        Text(text = "Delete question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Supprimer une question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Row(
@@ -460,16 +700,16 @@ fun EditScreen(
                 )
                 {
                     Button(onClick = {modifyQuestion = true}) {
-                        Text(text = "Modify question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Modifier une question", fontSize = policeSize.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
         // envoie des snackbars quand une entrée dans la BD n'a pas marché
-        LaunchedEffect(gameViewModel.errorMessage) {
-            if (gameViewModel.errorMessage.isNotEmpty()) {
-                snackbarHostState.showSnackbar(gameViewModel.errorMessage)
-                gameViewModel.errorMessage = ""
+        LaunchedEffect(gameViewModel.snackBarMessage) {
+            if (gameViewModel.snackBarMessage.isNotEmpty()) {
+                snackbarHostState.showSnackbar(gameViewModel.snackBarMessage)
+                gameViewModel.snackBarMessage = ""
             }
         }
     }

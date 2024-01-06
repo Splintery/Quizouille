@@ -36,7 +36,7 @@ import java.time.temporal.ChronoUnit
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StatisticsScreen(gameViewModel: GameViewModel, settingsViewModel: SettingsViewModel, navController: NavHostController) {
-    val questionsSet by gameViewModel.questionSetsFlow.collectAsState(listOf())
+    val questionsSet by gameViewModel.allQuestionSetsFlow.collectAsState(listOf())
     val policeTitleSize by settingsViewModel.policeTitleSizeFlow.collectAsState(initial = 20)
     val policeSize by settingsViewModel.policeSizeFlow.collectAsState(initial = 16)
     var selectedSetId by remember { mutableStateOf<Int?>(null) }
