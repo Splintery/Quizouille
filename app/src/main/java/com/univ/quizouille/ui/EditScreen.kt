@@ -56,14 +56,13 @@ import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 
 
-fun getFontWeight(setId: Int, itemId: Int): FontWeight {
-    if (setId == itemId) {
-        return FontWeight.Bold
-    } else {
-        return FontWeight.Normal
-    }
-}
-
+/**
+ * Permet de construire une bordure avec une couleur differente pour décorer un Text()
+ * si il à été selectionné par l'utilisateur
+ * @param idSelected l'id du set sélectionnée
+ * @param itemId l'id de l'item qui appelle cette méthode
+ * @return la couleur correspondant au status du Text(), Noir si selectionné, Gris sinon
+ * */
 fun getBorderColor(idSelected: Int, itemId: Int): Color {
     if (idSelected == itemId) {
         return Color.Black
@@ -71,6 +70,13 @@ fun getBorderColor(idSelected: Int, itemId: Int): Color {
         return Color.Gray
     }
 }
+/**
+ * Permet de construire une bordure plus épaisse pour décorer un Text()
+ * si il à été selectionné par l'utilisateur
+ * @param idSelected l'id du set sélectionnée
+ * @param itemId l'id de l'item qui appelle cette méthode
+ * @return l'épaisseur correspondant au status du Text(), 3 si selectionné, 1 sinon
+ * */
 fun getBorderWidth(idSelected: Int, itemId: Int): Dp {
     if (idSelected == itemId) {
         return 3.dp
@@ -78,14 +84,32 @@ fun getBorderWidth(idSelected: Int, itemId: Int): Dp {
         return 1.dp
     }
 }
-fun areAnswersValid(answer: List<String>, answerCorrect: List<Boolean>): Boolean {
+/**
+ * Vérifie si la réponse créée par l'utilisateur peut être considérée comme valide,
+ * une liste de réponses est valide si au moins une des réponses est définie comme correcte
+ * et est une chaîne non vide
+ * @param answers la liste des chaînes qui représenteront les différentes réponses dans la base de données
+ * @param answerCorrect la liste des Booleans qui représenteront le fait que les réponses dans la BDD soit correcte ou non
+ * @return vrai si les réponses sont valides faux sinon
+ * */
+fun areAnswersValid(answers: List<String>, answerCorrect: List<Boolean>): Boolean {
     for (i in 0..<4) {
-        if (!answer[i].equals("") && answerCorrect[i]) {
+        if (!answers[i].equals("") && answerCorrect[i]) {
             return true
         }
     }
     return false
 }
+
+/**
+ * EditScreen est décomposé en 4 menus pour les 4 tâches d'éditions que notre application propose:
+ *  -Ajouter une nouvelle question avec un nombre de réponses variables à un set de question existant de la BDD
+ *   ou bien même d'en créer un nouveau en même temps,
+ *  -Suppimer un set de question de la BDDainsi que toutes les questions qui y sont attachées,
+ *  -Supprimer une question de la BDD ainsi que toutes les réponses qui y sont attachées,
+ *  -Modifier un question déjà existante ainsi que les réponses qui lui sont rattachées
+ * Ces 4 menus sont découpés en 4 méthodes composable qui sont appelées en fonction des intérractions avec l'interface
+ * */
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "RememberReturnType")
 @Composable
@@ -117,6 +141,10 @@ fun EditScreen(
     val allQuestions: List<Question> by gameViewModel.allQuestionsFlow.collectAsState(initial = mutableListOf())
     val allAnswers: List<Answer> by gameViewModel.allAnswersFlow.collectAsState(initial = mutableListOf())
 
+    /**
+     * Cette méthode comme son nom l'indique permet de mettre sur l'écran de l'appli tout ce qui est necessaire
+     * pour récupérer de quoi ajouter une nouvelle question dans la BDD ainsi qu'un nouveau set.
+     * */
     @Composable
     fun addNewQuestionScreen() {
         Column(
@@ -304,6 +332,10 @@ fun EditScreen(
             }
         }
     }
+    /**
+     * Cette méthode offre le choix à l'utilisateur de selectionner un set puis de le supprimer de la BDD
+     * avec tout ce qui lui faisait référence
+     * */
     @Composable
     fun deleteSetScreen() {
         Column(
@@ -369,6 +401,10 @@ fun EditScreen(
             }
         }
     }
+    /**
+     * Cette méthode offre le choix à l'utilisateur de selectionner une question puis de la supprimer de la BDD
+     * avec toute les réponses qui lui faisait référence
+     * */
     @Composable
     fun deleteQuestionScreen() {
         var questionId by remember { mutableStateOf(-1) }
@@ -432,6 +468,10 @@ fun EditScreen(
             }
         }
     }
+    /**
+     * Cette méthode permet de completement modifier une réponse existante dans la BDD,
+     * elle fait confiance à l'utilisateur plainnement pour que la nouvelle question créée soit cohérente
+     * */
     @Composable
     fun modifyQuestionScreen() {
         var questionId by remember { mutableStateOf(-1) }
@@ -645,6 +685,7 @@ fun EditScreen(
     }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) {
+        // si l'une des ces variables est vrai on affiche le Screen necessaire pour réaliser la tâche demandé
         if (addNewQuestion || deleteSet || deleteQuestion || modifyQuestion) {
             if (addNewQuestion) {
                 addNewQuestionScreen()
@@ -655,7 +696,7 @@ fun EditScreen(
             } else {
                 modifyQuestionScreen()
             }
-        } else {
+        } else { // sinon on affiche le menu des choix pour le sdifférentes tâches d'edition de la BDD qu'offre notre appli
             Column(
                 modifier = Modifier
                     .fillMaxSize()

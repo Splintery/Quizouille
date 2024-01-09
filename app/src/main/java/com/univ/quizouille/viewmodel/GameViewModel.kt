@@ -155,6 +155,15 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * Permet de modifier dans la BDD le texte d'une réponse,
+     * ainsi que le fait quelle soit considéré comme correcte
+     * @param answerId  L'id dans la BDD de la réponse à modifier
+     * @param newAnswerContent  le nouveau string qui représente la valeur de la réponse attendu
+     *                          dans le cas d'un question avec une seule réponse ou alors d'un des choix
+     *                          qui sera affiché en cas de question à choix multiple
+     * @param newAnswerCorrect  vrai si la nouvelle version de la réponse doit être considéré comme correcte et fau sinon
+     * */
     fun updateAnswer(answerId: Int, newAnswerContent: String, newAnswerCorrect: Boolean) {
         viewModelScope.launch {
             try {
@@ -166,6 +175,13 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
             }
         }
     }
+    /**
+     * Permet de modifier le texte d'une question ainsi que son status
+     *  @param questionId l'id dans la BDD de la question à modifier
+     *  @param newQuestionContent le nouveau texte qui sera affiché quand la question sera posée
+     *  @param newQuestionStatus le nouveau status qui sera attribué à la question modifiée qui dicte
+     *                           la fréquence à laquelle cette question apparait
+     * */
     fun updateQuestion(questionId: Int, newQuestionContent: String, newQuestionStatus: Int) {
         viewModelScope.launch {
             try {
@@ -177,6 +193,10 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
             }
         }
     }
+    /**
+     * Permet de supprimer un set de la BDD
+     * @param setId l'id d'un set de question dans la BDD
+     * */
     fun deleteQuestionSet(setId: Int) {
         viewModelScope.launch {
             try {
@@ -187,6 +207,10 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
             }
         }
     }
+    /**
+     * Permet de supprimer une question de la BDD
+     * @param questionId l'id d'une question dans la BDD
+     * */
     fun deleteQuestion(questionId: Int) {
         viewModelScope.launch {
             try {
@@ -478,6 +502,10 @@ class GameViewModel(private var application: Application) : AndroidViewModel(app
         snackBarMessage = ""
     }
 
+    /**
+     * Permet au lancement de l'application d'insérer des jeux de questions avec des questions de différent type
+     * si la BDD ne possède aucune entrée pour les questionSet
+     * */
     fun insertSampleData() = viewModelScope.launch {
         try {
             val set1 = QuestionSet(name = "Math Formulas")

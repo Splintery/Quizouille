@@ -50,6 +50,15 @@ import com.univ.quizouille.viewmodel.GameViewModel
 import com.univ.quizouille.viewmodel.SettingsViewModel
 import kotlinx.coroutines.delay
 
+/**
+ * méthode qui est appelé dans le cas d'une question qui n'a qu'une seule réponse possible
+ * et qui met à jour le model en concéquence
+ * @param userAnswer l'entrée de l'utilisateur tappé au clavier dans un OutlinedTextField
+ * @param answer la réponse attendu pour la question courante
+ * @param question la question à laquelle l'utilisateur viens de répondre
+ * @param gameViewModel le model qui doit être mis à jour suite à l'appel de cette méthode
+ * @return Vrai si la réponse est considéré comme un succes, Faux sinon
+ * */
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Question, gameViewModel: GameViewModel): Boolean {
     return if (userAnswer.equals(answer.answer, ignoreCase = true)) {
@@ -60,6 +69,17 @@ fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Q
         false
     }
 }
+/**
+ * méthode qui est appelé dans le cas d'une question à choix multiple
+ * et qui met à jour le model en concéquence
+ * @param answersSelectedId une liste des ID dans la BDD des réponses séléctionnées par l'utilisateur
+ * @param answers la liste des réponses dans la BDD correspondantes à la question courante
+ * @param question la question à laquelle l'utilisateur viens de répondre
+ * @param gameViewModel le model qui doit être mis à jour suite à l'appel de cette méthode
+ * @return Vrai si la réponse est considéré comme un succes, Faux sinon,
+ *         Un succès est le fait que toutes les réponses correctes correspondantes à "question" dans la BDD
+ *         soit séléctionné par l'utilisateur et qu'aucune fausse ne soit séléctionné
+ * */
 @RequiresApi(Build.VERSION_CODES.O)
 fun handleMultipleAnswerValidation(answersSelectedId: List<Int>, answers: List<Answer>, question: Question, gameViewModel: GameViewModel): Boolean {
     var res = true
@@ -97,14 +117,21 @@ fun QuestionButton(buttonText: String, fontSize: Int, onClickAction: () -> Unit)
     }
 }
 
-
-fun getBorderWidth(answersSelectedId: List<Int>, id: Int): Dp {
-    return if (answersSelectedId.contains(id)) {
-        3.dp
-    } else {
-        1.dp
-    }
-}
+/**
+ * Permet d'obtenir la couleur adéquate dans le cas d'une QCM
+ * si la réponse n'est pas séléctionné par l'utilisateur elle est en gris,
+ * si elle l'est, elle est alors soit:
+ *  * si la réponse à été demandé à être révélé par l'utilisateur
+ *    ou si la réponse à été validé/timout et c'est une réponse correcte: Vert
+ *  * si la réponse à été validé/timout et la réponse est mauvais: Rouge
+ *  * sinon: Noir
+ * @param answersSelectedId l'id dans la BDD de la réponse si elle est séléctioné
+ * @param id l'id dans la BDD de la réponse qui à appelé cette méthode
+ * @param revealAnswer le boolean qui régit si l'on doit révéler la réponse de la question
+ * @param showNextButton le boolean qui régit si l'on doit autoriser l'utilisateur à passer à la question suivante
+ * @param answerCorrect le boolean qui régit si la réponse qui à appelé cette méthode doit être considéré comme correcte
+ * @return la couleur que prendra la bordure du Text() qui à appelé cette méthode
+ * */
 fun getBorderColor(answersSelectedId: Int, id: Int, revealAnswer: Boolean, showNextButton: Boolean, answerCorrect: Boolean): Color {
     return if (answersSelectedId == id) {
         if (revealAnswer || (showNextButton && answerCorrect)) {
@@ -149,6 +176,15 @@ fun QuestionScreen(
     var failQuestion by remember { mutableStateOf(false) }
     var revealQuestion by remember { mutableStateOf(false) }
 
+    /**
+     * Une fonction qui permet de factoriser le code pour l'affichage du choix
+     * des réponse dans le cas ou la question courante est à choix multiple.
+     * Ce Text est intérractif, il permet d'être clické pour ajouter/retirer
+     * à notre liste de réponse la réponse correspondant à "answers\[index]".
+     * le fait qu'une réponse est séléctionné est visible par l'épaisseur de la bordure qui en fait le contour,
+     * tandis que la couleur de cette bordure nous informe sur sa nature(voir commentaire de getBorderColor() et EditScreen.getBorderWidth())
+     * @param index représente l'index dans notre liste de réponse à laquelle doit correspondre notre nouveau Text()
+     * */
     @Composable
     fun getAnswerText(index: Int) {
         var currentAnswerSelected by remember {
@@ -218,7 +254,7 @@ fun QuestionScreen(
                 showNextButton = true
             }
             ECard(text = question.content, fontSize = policeSize)
-            if (answers.size == 1) {
+            if (answers.size == 1) { // Le cas où c'est une question avec une réponse précise attendu
                 OutlinedTextField(
                     value = answer,
                     onValueChange = { answer = it },
@@ -228,16 +264,17 @@ fun QuestionScreen(
                         .padding(vertical = 8.dp),
                     enabled = !showNextButton
                 )
-            } else {
-
+            } else { // Le cas où la question propose à l'utilisateur le choix entre plusieurs réponses
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
+                    // On fait une colonne de 2 lignes pour bien afficher les réponses,
+                    // pour ne pas afficher la même réponse sur les deux lignes en même temps
                     Row(modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(vertical = 5.dp),
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         for (index in answers.indices) {
-                            if (index % 2 == 0) {
+                            if (index % 2 == 0) { // On affiches les réponses d'indice pair dans notre liste de Answer sur la 1ère ligne
                                 getAnswerText(index = index)
                             }
                         }
@@ -248,7 +285,7 @@ fun QuestionScreen(
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         for (index in 0..<answers.size) {
-                            if (index % 2 == 1) {
+                            if (index % 2 == 1) { // On affiches les réponses d'indice impair dans notre liste de Answer sur la 2ère ligne
                                 getAnswerText(index = index)
                             }
                         }
