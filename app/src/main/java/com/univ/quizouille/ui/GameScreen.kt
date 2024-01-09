@@ -69,6 +69,7 @@ fun handleSingleAnswerValidation(userAnswer: String, answer: Answer, question: Q
         false
     }
 }
+
 /**
  * méthode qui est appelé dans le cas d'une question à choix multiple
  * et qui met à jour le model en concéquence

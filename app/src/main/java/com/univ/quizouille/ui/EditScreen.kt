@@ -7,7 +7,6 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -70,6 +69,7 @@ fun getBorderColor(idSelected: Int, itemId: Int): Color {
         return Color.Gray
     }
 }
+
 /**
  * Permet de construire une bordure plus épaisse pour décorer un Text()
  * si il à été selectionné par l'utilisateur
@@ -84,6 +84,7 @@ fun getBorderWidth(idSelected: Int, itemId: Int): Dp {
         return 1.dp
     }
 }
+
 /**
  * Vérifie si la réponse créée par l'utilisateur peut être considérée comme valide,
  * une liste de réponses est valide si au moins une des réponses est définie comme correcte

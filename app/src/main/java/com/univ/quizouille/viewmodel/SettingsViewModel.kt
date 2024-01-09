@@ -2,7 +2,6 @@ package com.univ.quizouille.viewmodel
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
